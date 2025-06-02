@@ -53,36 +53,37 @@ function renderImages(images, isPageChange = false) {
 
     img.onclick = () => img.classList.toggle('zoomed');
 
-    img.oncontextmenu = (e) => {
-      e.preventDefault();
-      const filename = img.dataset.filename;
-      const pageFolder = getPageFolder(currentPage);
+   img.oncontextmenu = (e) => {
+  e.preventDefault();
+  const filename = img.dataset.filename;
+  const pageFolder = getPageFolder(currentPage);
 
-      img.classList.add('pop-out');
-      img.addEventListener('animationend', () => {
-        if (gallery.contains(img)) {
-          gallery.removeChild(img);
-          requestAnimationFrame(() => {
-            const afterRects = getRects();
-            applyFLIP(beforeRects, afterRects);
-          });
-        }
+  img.classList.add('pop-out');
+  img.addEventListener('animationend', () => {
+    if (gallery.contains(img)) {
+      gallery.removeChild(img);
+      requestAnimationFrame(() => {
+        const afterRects = getRects();
+        applyFLIP(beforeRects, afterRects);
+      });
+    }
+    // 서버에 삭제 요청
+    fetch('/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: pageFolder, filename })
+    })
+    .then(res => {
+      if (res.ok) {
+        // 삭제 성공
+        // 서버에선 파일이 실제로 사라져야 함
+      }
+    })
+    .catch(err => console.error('삭제 요청 에러:', err));
+  }, { once: true });
+};
 
-        fetch('/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ page: pageFolder, filename })
-        })
-        .then(res => {
-          if (res.ok) {
-            // 삭제 성공
-          } else {
-            // 삭제 실패
-          }
-        })
-        .catch(err => console.error('삭제 요청 에러:', err));
-      }, { once: true });
-    };
+
 
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;

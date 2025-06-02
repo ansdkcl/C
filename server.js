@@ -50,17 +50,20 @@ app.get('/images/:page', (req, res) => {
 });
 
 app.post('/delete', (req, res) => {
-  console.log('삭제 요청 도착:', req.body); // body 잘 찍히는지 반드시 확인
-  const { page, filename } = req.body;
+  console.log('삭제 요청 도착:', req.body);
+  let { page, filename } = req.body;
+  // page가 숫자면 "page-1"로 변환
+  if (typeof page === 'number') page = `page-${page}`;
   if (!page || !filename) {
     return res.status(400).json({ error: '잘못된 요청' });
   }
-  const filePath = path.join(UPLOAD_DIR, page, filename);
+  const filePath = path.join(__dirname, 'uploads', page, filename);
 
   if (!fs.existsSync(filePath)) {
     console.warn('삭제 대상 파일 없음:', filePath);
     return res.status(404).json({ error: '파일 없음' });
   }
+
   fs.unlink(filePath, (err) => {
     if (err) {
       console.error('삭제 실패:', err.message);
@@ -70,6 +73,7 @@ app.post('/delete', (req, res) => {
     res.sendStatus(200);
   });
 });
+
 
 app.listen(PORT, () => {
   console.log(`서버 실행 중: http://localhost:${PORT}`);
