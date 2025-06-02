@@ -34,16 +34,32 @@ body, html {
 }
 
 .fade-in {
-  animation: slideUpFadeIn 0.4s ease-out;
+  animation: fadeInUp 0.4s ease-out;
 }
 
-@keyframes slideUpFadeIn {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(50px);  /* 하단에서 올라옴 */
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);     /* 제자리로 */
+    transform: translateY(0);
+  }
+}
+
+/* 새로 추가된 이미지 전용 애니메이션 */
+.pop-in {
+  animation: popInScale 0.4s ease-out forwards;
+}
+
+@keyframes popInScale {
+  0% {
+    opacity: 0;
+    transform: scale(3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
