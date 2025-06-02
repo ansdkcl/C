@@ -1,4 +1,4 @@
-alert("최신 스크립트가 적용되었습니다");
+
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -41,61 +41,62 @@ function renderImages(images, isPageChange = false) {
   const filenames = new Set();
 
   images.forEach((image, i) => {
-    filenames.add(image.filename);
-    let img = existingMap.get(image.filename);
+  filenames.add(image.filename);
+  let img = existingMap.get(image.filename);
 
-    if (!img) {
-      img = document.createElement('img');
-      img.src = image.url;
-      img.className = 'gallery-image';
-      img.dataset.filename = image.filename;
-      img.classList.add('pop-in');
-      gallery.appendChild(img);
-    }
+  if (!img) {
+    img = document.createElement('img');
+    img.src = image.url;
+    img.className = 'gallery-image';
+    img.dataset.filename = image.filename;
+    img.classList.add('pop-in');
+    gallery.appendChild(img);
+  }
 
-    img.onclick = () => img.classList.toggle('zoomed');
-img.oncontextmenu = (e) => {
-  e.preventDefault();
-  const filename = img.dataset.filename;
-  const pageFolder = getPageFolder(currentPage);
+  // **이벤트 리스너 중복 방지**
+  img.onclick = null;
+  img.oncontextmenu = null;
 
-  // 1. 삭제 요청을 바로 보냄 (애니메이션 전에 무조건 실행)
-  fetch('/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ page: pageFolder, filename })
-  })
-    .then(res => {
-      if (res.ok) {
-        console.log('서버 삭제 성공');
-      } else {
-        console.log('서버 삭제 실패');
-      }
+  img.onclick = () => img.classList.toggle('zoomed');
+  img.oncontextmenu = (e) => {
+    e.preventDefault();
+    const filename = img.dataset.filename;
+    const pageFolder = getPageFolder(currentPage);
+
+    fetch('/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: pageFolder, filename })
     })
-    .catch(err => console.error('삭제 요청 에러:', err));
+      .then(res => {
+        if (res.ok) {
+          fetch(`/images/${pageFolder}`, { cache: 'no-store' })
+            .then(res => res.json())
+            .then(images => renderImages(images, false));
+        } else {
+          console.log('서버 삭제 실패');
+        }
+      })
+      .catch(err => console.error('삭제 요청 에러:', err));
 
-  // 2. 애니메이션은 그냥 UI 처리용
-  img.classList.add('pop-out');
-  img.addEventListener('animationend', () => {
-    if (gallery.contains(img)) {
-      gallery.removeChild(img);
-      requestAnimationFrame(() => {
-        const afterRects = getRects();
-        applyFLIP(getRects(), afterRects);
-      });
-    }
-  }, { once: true });
-};
+    // 애니메이션 적용(항상 pop-out 적용)
+    img.classList.add('pop-out');
+    img.addEventListener('animationend', () => {
+      if (gallery.contains(img)) {
+        gallery.removeChild(img);
+        requestAnimationFrame(() => {
+          const afterRects = getRects();
+          applyFLIP(getRects(), afterRects);
+        });
+      }
+    }, { once: true });
+  };
 
-
-
-
-
-    if (isPageChange) {
-      img.style.animation = `fadeInUp 0.4s ease-out both`;
-      img.style.animationDelay = `${i * 60}ms`;
-    }
-  });
+  if (isPageChange) {
+    img.style.animation = `fadeInUp 0.4s ease-out both`;
+    img.style.animationDelay = `${i * 60}ms`;
+  }
+});
 
   existing.forEach(el => {
     if (!filenames.has(el.dataset.filename)) {
