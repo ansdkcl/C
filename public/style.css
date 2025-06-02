@@ -10,13 +10,13 @@ body, html {
 
 #gallery {
   display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100vh;
   gap: 20px;
   padding: 20px;
-  overflow-x: auto;
-  height: 100vh;
   box-sizing: border-box;
   transition: all 0.5s ease;
 }
@@ -36,7 +36,7 @@ body, html {
 }
 
 .fade-in {
-  animation: fadeInUp 0.4s ease-out;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 @keyframes fadeInUp {
@@ -50,15 +50,14 @@ body, html {
   }
 }
 
-/* 새로 추가된 이미지에 부드러운 팝인 효과 */
 .pop-in {
-  animation: popInSoft 0.6s ease-out forwards;
+  animation: popInSmooth 0.6s ease-out forwards;
 }
 
-@keyframes popInSoft {
+@keyframes popInSmooth {
   0% {
     opacity: 0;
-    transform: scale(1.2);
+    transform: scale(1.8);
   }
   100% {
     opacity: 1;
@@ -66,12 +65,11 @@ body, html {
   }
 }
 
-/* 삭제 시 부드럽게 축소되는 팝아웃 효과 */
 .pop-out {
-  animation: popOutSoft 0.4s ease-in forwards;
+  animation: popOutSmooth 0.4s ease-in forwards;
 }
 
-@keyframes popOutSoft {
+@keyframes popOutSmooth {
   0% {
     opacity: 1;
     transform: scale(1);
