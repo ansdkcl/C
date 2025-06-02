@@ -1,4 +1,70 @@
-// ✅ 대상 변경: window
+let currentPage = 1;
+
+const pageNum = document.getElementById('page-num');
+const gallery = document.getElementById('gallery');
+const fileInput = document.getElementById('fileInput');
+
+// 이미지 로드
+function loadImages(page) {
+  fetch(`/images/${page}`)
+    .then(res => res.json())
+    .then(images => {
+      gallery.innerHTML = '';
+      images.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.classList.add('gallery-image');
+
+        img.addEventListener('click', () => {
+          img.classList.toggle('zoomed');
+        });
+
+        img.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const filename = src.split('/').pop();
+          if (confirm('이 이미지를 삭제할까요?')) {
+            fetch('/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page: currentPage, filename })
+            }).then(() => loadImages(currentPage));
+          }
+        });
+
+        img.setAttribute('draggable', true);
+        img.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setDragImage(new Image(), 0, 0);
+        });
+
+        gallery.appendChild(img);
+      });
+    });
+}
+
+function updatePage(n) {
+  currentPage = n;
+  pageNum.textContent = currentPage;
+  loadImages(currentPage);
+}
+
+function uploadFiles(files) {
+  [...files].forEach(file => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('page', currentPage);
+    fetch('/upload', {
+      method: 'POST',
+      body: formData
+    }).then(() => loadImages(currentPage));
+  });
+}
+
+// 썸네일 미리보기
+let previewImg;
+let previewImgCreated = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
   lastMouseX = e.clientX;
@@ -74,3 +140,6 @@ window.addEventListener('drop', (e) => {
     uploadFiles(e.dataTransfer.files);
   }
 });
+
+// 초기 로딩
+updatePage(currentPage);
