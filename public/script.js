@@ -1,3 +1,5 @@
+// ✅ 완전 통합된 script.js (FLIP / fade-in / pop-in-out / 삭제 반영 및 1번 이미지 포함 적용)
+
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
@@ -11,12 +13,12 @@ function getRects() {
 }
 
 function applyFLIP(beforeRects, afterRects) {
-  beforeRects.forEach(({ el, rect }, i) => {
-    const newRect = afterRects[i]?.rect;
-    if (!newRect) return;
+  afterRects.forEach(({ el }, i) => {
+    const before = beforeRects.find(b => b.el === el);
+    if (!before) return;
 
-    const dx = rect.left - newRect.left;
-    const dy = rect.top - newRect.top;
+    const dx = before.rect.left - el.getBoundingClientRect().left;
+    const dy = before.rect.top - el.getBoundingClientRect().top;
 
     if (dx || dy) {
       el.style.transition = 'none';
@@ -40,13 +42,13 @@ function loadImages(page) {
     .then(res => res.json())
     .then(images => {
       gallery.innerHTML = '';
-
       images.forEach((src, i) => {
         const img = document.createElement('img');
         img.src = src;
         img.className = 'gallery-image';
 
         img.style.animation = 'none';
+        img.style.animationDelay = `${i * 80}ms`;
         void img.offsetWidth;
         img.classList.add('fade-in');
         img.style.animationDelay = `${i * 80}ms`;
@@ -56,13 +58,13 @@ function loadImages(page) {
         img.oncontextmenu = (e) => {
           e.preventDefault();
           const filename = src.split('/').pop();
-          const before = getRects();
+          const beforeRects = getRects();
 
           img.classList.add('pop-out');
           setTimeout(() => {
-            gallery.removeChild(img);
-            const after = getRects();
-            applyFLIP(before, after);
+            if (gallery.contains(img)) gallery.removeChild(img);
+            const afterRects = getRects();
+            applyFLIP(beforeRects, afterRects);
 
             fetch('/delete', {
               method: 'POST',
@@ -109,7 +111,7 @@ function uploadFiles(files) {
 
         tempImg.classList.add('pop-out');
         setTimeout(() => {
-          gallery.removeChild(tempImg);
+          if (gallery.contains(tempImg)) gallery.removeChild(tempImg);
           const after = getRects();
           applyFLIP(before, after);
 
