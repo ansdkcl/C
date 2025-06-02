@@ -1,4 +1,4 @@
-// ✅ 완전 통합된 script.js (FLIP, 순차 fade-in, pop-in/out, filename 동기화)
+// ✅ 완전 통합된 script.js (애니메이션 타이밍 개선: pop-in, fade-in)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -88,8 +88,12 @@ function uploadFiles(files) {
     formData.append('image', file);
 
     const tempImg = document.createElement('img');
-    tempImg.className = 'gallery-image pop-in';
+    tempImg.className = 'gallery-image';
     tempImg.style.opacity = '0';
+    tempImg.style.animation = 'none';
+    void tempImg.offsetWidth;
+    tempImg.classList.add('pop-in');
+
     const reader = new FileReader();
     reader.onload = (e) => {
       tempImg.src = e.target.result;
