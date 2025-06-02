@@ -1,3 +1,5 @@
+alert("최신 스크립트가 적용되었습니다");
+
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
@@ -57,31 +59,35 @@ img.oncontextmenu = (e) => {
   const filename = img.dataset.filename;
   const pageFolder = getPageFolder(currentPage);
 
-  console.log('삭제 요청', { page: pageFolder, filename }); // 이 코드 반드시 넣기
+  // 1. 삭제 요청을 바로 보냄 (애니메이션 전에 무조건 실행)
+  fetch('/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page: pageFolder, filename })
+  })
+    .then(res => {
+      if (res.ok) {
+        console.log('서버 삭제 성공');
+      } else {
+        console.log('서버 삭제 실패');
+      }
+    })
+    .catch(err => console.error('삭제 요청 에러:', err));
+
+  // 2. 애니메이션은 그냥 UI 처리용
   img.classList.add('pop-out');
   img.addEventListener('animationend', () => {
     if (gallery.contains(img)) {
       gallery.removeChild(img);
       requestAnimationFrame(() => {
         const afterRects = getRects();
-        applyFLIP(beforeRects, afterRects);
+        applyFLIP(getRects(), afterRects);
       });
     }
-    // 서버에 삭제 요청
-    fetch('/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: pageFolder, filename })
-    })
-    .then(res => {
-      if (res.ok) {
-        // 삭제 성공
-        // 서버에선 파일이 실제로 사라져야 함
-      }
-    })
-    .catch(err => console.error('삭제 요청 에러:', err));
   }, { once: true });
 };
+
+
 
 
 
