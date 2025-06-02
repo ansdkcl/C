@@ -8,12 +8,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// 정적 파일 서빙
 app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 업로드 폴더 생성
 const tmpDir = path.join(__dirname, 'uploads/tmp');
 fs.mkdirSync(tmpDir, { recursive: true });
 
@@ -23,7 +20,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 이미지 업로드 처리
 app.post('/upload', upload.single('image'), (req, res) => {
   const page = req.body.page || '1';
   const destDir = path.join(__dirname, 'uploads', `page-${page}`);
@@ -32,7 +28,6 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ success: true });
 });
 
-// 이미지 목록 반환
 app.get('/images/:page', (req, res) => {
   const dir = path.join(__dirname, 'uploads', `page-${req.params.page}`);
   if (!fs.existsSync(dir)) return res.json([]);
@@ -40,7 +35,6 @@ app.get('/images/:page', (req, res) => {
   res.json(files);
 });
 
-// 이미지 삭제
 app.post('/delete', (req, res) => {
   const { page, filename } = req.body;
   const filePath = path.join(__dirname, 'uploads', `page-${page}`, filename);

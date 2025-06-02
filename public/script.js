@@ -59,9 +59,9 @@ let previewImg = null;
 
 window.addEventListener('dragenter', (e) => {
   e.preventDefault();
-  if (previewImg || !e.dataTransfer.types.includes('Files')) return;
-
-  const file = e.dataTransfer.items?.[0]?.getAsFile?.();
+  const items = e.dataTransfer?.items;
+  if (!items || !items.length) return;
+  const file = items[0].getAsFile();
   if (!file || !file.type.startsWith('image/')) return;
 
   const reader = new FileReader();
@@ -70,14 +70,15 @@ window.addEventListener('dragenter', (e) => {
     previewImg.src = event.target.result;
     previewImg.id = 'preview-image';
     previewImg.style.position = 'fixed';
-    previewImg.style.top = '20px';
-    previewImg.style.left = '20px';
+    previewImg.style.top = `${e.clientY + 20}px`;
+    previewImg.style.left = `${e.clientX + 20}px`;
     previewImg.style.width = '200px';
     previewImg.style.zIndex = '9999';
     previewImg.style.border = '2px solid #666';
     previewImg.style.borderRadius = '8px';
     previewImg.style.boxShadow = '0 0 20px rgba(0,0,0,0.8)';
     previewImg.style.pointerEvents = 'none';
+    previewImg.style.opacity = '0.9';
     document.body.appendChild(previewImg);
   };
   reader.readAsDataURL(file);
@@ -104,16 +105,16 @@ window.addEventListener('drop', (e) => {
     previewImg.remove();
     previewImg = null;
   }
-
   if (e.dataTransfer.files.length > 0) {
     uploadFiles(e.dataTransfer.files);
   }
 });
 
-// 페이지 이동
+// 방향키 페이지 이동
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
+// 첫 로딩
 updatePage(currentPage);
