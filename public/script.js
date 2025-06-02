@@ -1,5 +1,3 @@
-
-
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
@@ -34,10 +32,6 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
-// 삭제 중인 이미지 집합
-// 삭제 중인 이미지 집합
-const deletingImages = new Set();
-
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -48,7 +42,6 @@ function renderImages(images, isPageChange = false) {
     filenames.add(image.filename);
     let img = existingMap.get(image.filename);
 
-    // 1. 없으면 새로 만듦
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
@@ -57,36 +50,33 @@ function renderImages(images, isPageChange = false) {
       gallery.appendChild(img);
     }
 
-    // 2. 무조건 이벤트 강제 재등록
+    // 항상 이벤트 강제 재등록
     img.onclick = null;
     img.oncontextmenu = null;
+
     img.onclick = () => img.classList.toggle('zoomed');
     img.oncontextmenu = (e) => {
-  e.preventDefault();
-  // 이미 팝아웃 중이면 무시
-  if (img.classList.contains('pop-out')) return;
-  img.classList.add('pop-out');
+      e.preventDefault();
+      if (img.classList.contains('pop-out')) return;
 
-  // pop-out 애니메이션 끝난 뒤에 DOM에서 삭제
-  img.addEventListener('animationend', () => {
-    if (gallery.contains(img)) gallery.removeChild(img);
-  }, { once: true });
+      img.classList.add('pop-out');
 
-  // 서버 삭제는 동시에 진행
-  fetch('/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-  });
-};
+      img.addEventListener('animationend', () => {
+        if (gallery.contains(img)) gallery.removeChild(img);
 
-        .then(res => {
-          // 삭제 성공 시 실제로 DOM에서 제거(추가로 보장)
-          if (res.ok && gallery.contains(img)) gallery.removeChild(img);
-        });
+        // DOM에서 사라진 뒤 반드시 서버 상태와 동기화
+        fetch(`/images/${getPageFolder(currentPage)}`, { cache: 'no-store' })
+          .then(res => res.json())
+          .then(images => renderImages(images, false));
+      }, { once: true });
+
+      fetch('/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
+      });
     };
 
-    // 페이드인 애니메이션(페이지 변경 시만)
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;
       img.style.animationDelay = `${i * 60}ms`;
@@ -96,7 +86,6 @@ function renderImages(images, isPageChange = false) {
     }
   });
 
-  // 기존에 남아있지만 서버에 없는 것은 삭제
   existing.forEach(el => {
     if (!filenames.has(el.dataset.filename)) {
       if (gallery.contains(el)) gallery.removeChild(el);
@@ -108,7 +97,6 @@ function renderImages(images, isPageChange = false) {
     applyFLIP(beforeRects, afterRects);
   });
 }
-
 
 function updatePage(n) {
   currentPage = n;

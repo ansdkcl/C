@@ -38,6 +38,18 @@ body, html {
   z-index: 10;
 }
 
+.gallery-image.pop-out {
+  animation: popOut 0.3s cubic-bezier(0.6,0,0.7,1) both;
+}
+@keyframes popOut {
+  to {
+    opacity: 0;
+    transform: scale(0.8) rotate(-12deg);
+    filter: blur(2px);
+  }
+}
+
+
 /* 순차 페이드인 (페이지 넘김 시) */
 .fade-in {
   animation: fadeInUp 0.4s ease-out both;
