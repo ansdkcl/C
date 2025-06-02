@@ -3,71 +3,71 @@ const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
-// 이미지 로드 (깜빡임 방지: 페이드 아웃/인)
+// 렉 개선된 이미지 로드
 function loadImages(page) {
-  gallery.style.transition = 'opacity 0.3s ease';
-  gallery.style.opacity = '0';
-
   fetch(`/images/${page}`)
     .then(res => res.json())
     .then(images => {
-      setTimeout(() => {
-        gallery.innerHTML = '';
+      const existing = Array.from(gallery.children);
+      const used = new Set();
 
-        images.forEach(src => {
-          const img = document.createElement('img');
-          img.src = src;
+      // 이미지 갱신 또는 추가
+      images.forEach((src, i) => {
+        let img = existing[i];
+        if (!img) {
+          img = document.createElement('img');
           img.classList.add('gallery-image', 'fade-in');
-
-          img.addEventListener('click', () => {
-            img.classList.toggle('zoomed');
-          });
-
-          img.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const filename = src.split('/').pop();
-
-            const previousRects = Array.from(gallery.children).map(el => ({
-              el,
-              rect: el.getBoundingClientRect()
-            }));
-
-            img.classList.add('pop-out');
-
-            setTimeout(() => {
-              img.remove();
-
-              previousRects.forEach(({ el, rect }) => {
-                if (!document.body.contains(el)) return;
-                const newRect = el.getBoundingClientRect();
-                const dx = rect.left - newRect.left;
-                const dy = rect.top - newRect.top;
-                if (dx || dy) {
-                  el.style.transition = 'none';
-                  el.style.transform = `translate(${dx}px, ${dy}px)`;
-                  requestAnimationFrame(() => {
-                    el.style.transition = 'transform 0.4s ease';
-                    el.style.transform = 'translate(0, 0)';
-                  });
-                }
-              });
-
-              fetch('/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: currentPage, filename })
-              });
-            }, 400);
-          });
-
           gallery.appendChild(img);
-        });
+        }
+        img.src = src;
+        used.add(img);
 
-        // 페이드 인
-        requestAnimationFrame(() => {
-          gallery.style.opacity = '1';
-        });
-      }, 150);
+        // 이벤트 다시 연결
+        img.onclick = () => img.classList.toggle('zoomed');
+        img.oncontextmenu = (e) => {
+          e.preventDefault();
+          const filename = src.split('/').pop();
+
+          const previousRects = Array.from(gallery.children).map(el => ({
+            el,
+            rect: el.getBoundingClientRect()
+          }));
+
+          img.classList.add('pop-out');
+
+          setTimeout(() => {
+            img.remove();
+
+            previousRects.forEach(({ el, rect }) => {
+              if (!document.body.contains(el)) return;
+              const newRect = el.getBoundingClientRect();
+              const dx = rect.left - newRect.left;
+              const dy = rect.top - newRect.top;
+              if (dx || dy) {
+                el.style.transition = 'none';
+                el.style.transform = `translate(${dx}px, ${dy}px)`;
+                requestAnimationFrame(() => {
+                  el.style.transition = 'transform 0.4s ease';
+                  el.style.transform = 'translate(0, 0)';
+                });
+              }
+            });
+
+            fetch('/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page: currentPage, filename })
+            });
+          }, 400);
+        };
+      });
+
+      // 남는 이미지 제거
+      existing.forEach(img => {
+        if (!used.has(img)) {
+          gallery.removeChild(img);
+        }
+      });
     });
 }
 
@@ -115,11 +115,8 @@ function uploadFiles(files) {
         });
       });
 
-      tempImg.addEventListener('click', () => {
-        tempImg.classList.toggle('zoomed');
-      });
-
-      tempImg.addEventListener('contextmenu', (e) => {
+      tempImg.onclick = () => tempImg.classList.toggle('zoomed');
+      tempImg.oncontextmenu = (e) => {
         e.preventDefault();
         const filename = file.name;
 
@@ -154,7 +151,7 @@ function uploadFiles(files) {
             body: JSON.stringify({ page: currentPage, filename })
           });
         }, 400);
-      });
+      };
     };
     reader.readAsDataURL(file);
 
