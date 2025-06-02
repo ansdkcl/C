@@ -1,3 +1,5 @@
+// ✅ 서버 코드 (쿼리스트링 기반 업로드 대응)
+
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -6,45 +8,58 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
-const tmpDir = path.join(__dirname, 'uploads/tmp');
-fs.mkdirSync(tmpDir, { recursive: true });
+app.use(express.static('public'));
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use(express.json());
+
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, tmpDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+  destination: (req, file, cb) => {
+    const page = req.query.page;
+    const pageDir = path.join(UPLOAD_DIR, page);
+    ensureDir(pageDir);
+    cb(null, pageDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`);
+  }
 });
+
 const upload = multer({ storage });
 
 app.post('/upload', upload.single('image'), (req, res) => {
-  const page = req.body.page || '1';
-  const destDir = path.join(__dirname, 'uploads', `page-${page}`);
-  fs.mkdirSync(destDir, { recursive: true });
-  fs.renameSync(req.file.path, path.join(destDir, req.file.filename));
-  res.json({ success: true });
+  res.sendStatus(200);
 });
 
 app.get('/images/:page', (req, res) => {
-  const dir = path.join(__dirname, 'uploads', `page-${req.params.page}`);
-  if (!fs.existsSync(dir)) return res.json([]);
-  const files = fs.readdirSync(dir).map(f => `/uploads/page-${req.params.page}/${f}`);
-  res.json(files);
+  const pageDir = path.join(UPLOAD_DIR, req.params.page);
+  ensureDir(pageDir);
+
+  fs.readdir(pageDir, (err, files) => {
+    if (err) return res.json([]);
+    const urls = files.map(f => `/uploads/${req.params.page}/${f}`);
+    res.json(urls);
+  });
 });
 
 app.post('/delete', (req, res) => {
   const { page, filename } = req.body;
-  const filePath = path.join(__dirname, 'uploads', `page-${page}`, filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    return res.json({ success: true });
-  }
-  res.status(404).json({ success: false });
+  const filePath = path.join(UPLOAD_DIR, page, filename);
+
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error('삭제 실패:', err);
+      return res.sendStatus(500);
+    }
+    res.sendStatus(200);
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ 서버 실행 중: http://localhost:${PORT}`);
+  console.log(`서버 실행 중: http://localhost:${PORT}`);
 });

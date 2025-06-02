@@ -1,4 +1,4 @@
-// ✅ 완전 통합된 script.js (FLIP / fade-in / pop-in-out / 삭제 반영 및 1번 이미지 포함 적용)
+// ✅ 완전 통합된 script.js (FLIP: 추가/삭제만 적용, 페이지 전환은 fade-in만, 업로드 버그 수정)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -13,7 +13,7 @@ function getRects() {
 }
 
 function applyFLIP(beforeRects, afterRects) {
-  afterRects.forEach(({ el }, i) => {
+  afterRects.forEach(({ el }) => {
     const before = beforeRects.find(b => b.el === el);
     if (!before) return;
 
@@ -24,7 +24,7 @@ function applyFLIP(beforeRects, afterRects) {
       el.style.transition = 'none';
       el.style.transform = `translate(${dx}px, ${dy}px)`;
       requestAnimationFrame(() => {
-        el.style.transition = 'transform 0.4s ease';
+        el.style.transition = 'transform 0.5s ease-in-out';
         el.style.transform = 'translate(0, 0)';
       });
     }
@@ -34,11 +34,7 @@ function applyFLIP(beforeRects, afterRects) {
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
-  loadImages(currentPage);
-}
-
-function loadImages(page) {
-  fetch(`/images/${page}`)
+  fetch(`/images/${currentPage}`)
     .then(res => res.json())
     .then(images => {
       gallery.innerHTML = '';
@@ -48,10 +44,9 @@ function loadImages(page) {
         img.className = 'gallery-image';
 
         img.style.animation = 'none';
-        img.style.animationDelay = `${i * 80}ms`;
+        img.style.animationDelay = `${i * 60}ms`;
         void img.offsetWidth;
         img.classList.add('fade-in');
-        img.style.animationDelay = `${i * 80}ms`;
 
         img.onclick = () => img.classList.toggle('zoomed');
 
@@ -80,54 +75,18 @@ function loadImages(page) {
 }
 
 function uploadFiles(files) {
-  const beforeRects = getRects();
-
   [...files].forEach(file => {
     const formData = new FormData();
     formData.append('image', file);
-    formData.append('page', currentPage);
+    // formData.append('page', currentPage); ← 제거됨
+    // 페이지 정보는 쿼리스트링으로 전달
 
-    const tempImg = document.createElement('img');
-    tempImg.className = 'gallery-image pop-in';
-    tempImg.style.opacity = '0';
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      tempImg.src = e.target.result;
-      gallery.appendChild(tempImg);
-
-      requestAnimationFrame(() => {
-        tempImg.style.opacity = '1';
-        const afterRects = getRects();
-        applyFLIP(beforeRects, afterRects);
-      });
-
-      tempImg.onclick = () => tempImg.classList.toggle('zoomed');
-
-      tempImg.oncontextmenu = (e) => {
-        e.preventDefault();
-        const filename = file.name;
-        const before = getRects();
-
-        tempImg.classList.add('pop-out');
-        setTimeout(() => {
-          if (gallery.contains(tempImg)) gallery.removeChild(tempImg);
-          const after = getRects();
-          applyFLIP(before, after);
-
-          fetch('/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ page: currentPage, filename })
-          });
-        }, 400);
-      };
-    };
-    reader.readAsDataURL(file);
-
-    fetch('/upload', {
+    fetch(`/upload?page=${currentPage}`, {
       method: 'POST',
       body: formData
+    }).then(() => {
+      setTimeout(() => updatePage(currentPage), 100); // 업로드 후 서버 기준으로 새로고침
     });
   });
 }
@@ -145,4 +104,4 @@ window.addEventListener('drop', e => {
   }
 });
 
-setTimeout(() => updatePage(currentPage), 150);
+document.addEventListener('DOMContentLoaded', () => updatePage(currentPage));

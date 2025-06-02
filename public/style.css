@@ -26,19 +26,17 @@ body, html {
   max-height: 90vh;
   object-fit: contain;
   border-radius: 10px;
-  transition: transform 0.5s ease, opacity 0.5s ease, margin 0.5s ease;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out, margin 0.5s ease-in-out;
   cursor: pointer;
 }
 
-/* 확대 효과 */
 .gallery-image.zoomed {
   transform: scale(2);
   z-index: 10;
 }
 
-/* 순차 fade-in */
 .fade-in {
-  animation: fadeInUp 0.5s ease-out both;
+  animation: fadeInUp 0.4s ease-out both;
 }
 
 @keyframes fadeInUp {
@@ -52,9 +50,8 @@ body, html {
   }
 }
 
-/* pop-in: 이미지 추가 시 */
 .pop-in {
-  animation: popInSmooth 0.5s ease-out forwards;
+  animation: popInSmooth 0.4s ease-out forwards;
 }
 
 @keyframes popInSmooth {
@@ -68,9 +65,8 @@ body, html {
   }
 }
 
-/* pop-out: 이미지 삭제 시 */
 .pop-out {
-  animation: popOutSmooth 0.4s ease-in forwards;
+  animation: popOutSmooth 0.35s ease-in forwards;
 }
 
 @keyframes popOutSmooth {
