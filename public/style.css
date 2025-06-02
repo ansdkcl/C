@@ -10,14 +10,15 @@ body, html {
 
 #gallery {
   display: flex;
-  flex-direction: row;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: center;
-  height: 100vh;
   gap: 20px;
   padding: 20px;
+  overflow-x: auto;
+  height: 100vh;
   box-sizing: border-box;
-  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); /* 자연스러운 이동 */
+  transition: all 0.5s ease;
 }
 
 .gallery-image {
@@ -25,7 +26,7 @@ body, html {
   max-height: 90vh;
   object-fit: contain;
   border-radius: 10px;
-  transition: transform 0.5s ease, opacity 0.4s ease;
+  transition: transform 0.5s ease, opacity 0.5s ease, margin 0.5s ease;
   cursor: pointer;
 }
 
@@ -49,14 +50,15 @@ body, html {
   }
 }
 
+/* 새로 추가된 이미지에 부드러운 팝인 효과 */
 .pop-in {
-  animation: popInScale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: popInSoft 0.6s ease-out forwards;
 }
 
-@keyframes popInScale {
+@keyframes popInSoft {
   0% {
     opacity: 0;
-    transform: scale(3);
+    transform: scale(1.2);
   }
   100% {
     opacity: 1;
@@ -64,17 +66,18 @@ body, html {
   }
 }
 
+/* 삭제 시 부드럽게 축소되는 팝아웃 효과 */
 .pop-out {
-  animation: popOutScale 0.4s ease forwards;
+  animation: popOutSoft 0.4s ease-in forwards;
 }
 
-@keyframes popOutScale {
-  from {
+@keyframes popOutSoft {
+  0% {
     opacity: 1;
     transform: scale(1);
   }
-  to {
+  100% {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.8);
   }
 }

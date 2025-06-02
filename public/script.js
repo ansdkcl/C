@@ -4,8 +4,7 @@ const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
-// 이미지 로드
-function loadImages(page, popInFilename = null) {
+function loadImages(page) {
   fetch(`/images/${page}`)
     .then(res => res.json())
     .then(images => {
@@ -13,13 +12,7 @@ function loadImages(page, popInFilename = null) {
       images.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
-        const filename = src.split('/').pop();
-
-        if (filename === popInFilename) {
-          img.classList.add('gallery-image', 'pop-in');
-        } else {
-          img.classList.add('gallery-image', 'fade-in');
-        }
+        img.classList.add('gallery-image', 'fade-in');
 
         img.addEventListener('click', () => {
           img.classList.toggle('zoomed');
@@ -27,20 +20,16 @@ function loadImages(page, popInFilename = null) {
 
         img.addEventListener('contextmenu', (e) => {
           e.preventDefault();
-          if (confirm('이 이미지를 삭제할까요?')) {
-            img.classList.add('pop-out');
-            setTimeout(() => {
-              fetch('/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: currentPage, filename })
-              }).then(res => {
-                if (res.ok) {
-                  img.remove();
-                }
-              });
-            }, 300); // pop-out 애니메이션 시간
-          }
+          const filename = src.split('/').pop();
+
+          img.classList.add('pop-out');
+          img.addEventListener('animationend', () => {
+            fetch('/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page: currentPage, filename })
+            }).then(() => loadImages(currentPage));
+          }, { once: true });
         });
 
         gallery.appendChild(img);
@@ -70,32 +59,26 @@ function uploadFiles(files) {
       reader.onload = (e) => {
         img.src = e.target.result;
         img.classList.add('gallery-image', 'pop-in');
-        gallery.appendChild(img);
 
-        // 클릭 확대
         img.addEventListener('click', () => {
           img.classList.toggle('zoomed');
         });
 
-        // 우클릭 삭제
-        img.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
+        img.addEventListener('contextmenu', (ev) => {
+          ev.preventDefault();
           const filename = file.name;
-          if (confirm('이 이미지를 삭제할까요?')) {
-            img.classList.add('pop-out');
-            setTimeout(() => {
-              fetch('/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: currentPage, filename })
-              }).then(res => {
-                if (res.ok) {
-                  img.remove();
-                }
-              });
-            }, 300);
-          }
+
+          img.classList.add('pop-out');
+          img.addEventListener('animationend', () => {
+            fetch('/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page: currentPage, filename })
+            }).then(() => loadImages(currentPage));
+          }, { once: true });
         });
+
+        gallery.appendChild(img);
       };
 
       reader.readAsDataURL(file);
@@ -103,12 +86,19 @@ function uploadFiles(files) {
   });
 }
 
-// 썸네일 미리보기 생략 (요청 없음)
-
 // 페이지 이동
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
+});
+
+window.addEventListener('dragover', (e) => e.preventDefault());
+
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length > 0) {
+    uploadFiles(e.dataTransfer.files);
+  }
 });
 
 updatePage(currentPage);
