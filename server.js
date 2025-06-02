@@ -1,4 +1,4 @@
-// ✅ 서버 코드 (쿼리스트링 기반 업로드 대응)
+// ✅ 서버 코드 (쿼리스트링 기반 업로드 대응 + 업로드된 파일명 반환)
 
 const express = require('express');
 const multer = require('multer');
@@ -26,14 +26,17 @@ const storage = multer.diskStorage({
     cb(null, pageDir);
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}_${file.originalname}`);
+    const uniqueName = `${Date.now()}_${file.originalname}`;
+    cb(null, uniqueName);
   }
 });
 
 const upload = multer({ storage });
 
 app.post('/upload', upload.single('image'), (req, res) => {
-  res.sendStatus(200);
+  const page = req.query.page;
+  const filename = req.file.filename;
+  res.json({ filename });
 });
 
 app.get('/images/:page', (req, res) => {
@@ -42,8 +45,11 @@ app.get('/images/:page', (req, res) => {
 
   fs.readdir(pageDir, (err, files) => {
     if (err) return res.json([]);
-    const urls = files.map(f => `/uploads/${req.params.page}/${f}`);
-    res.json(urls);
+    const images = files.map(f => ({
+      url: `/uploads/${req.params.page}/${f}`,
+      filename: f
+    }));
+    res.json(images);
   });
 });
 

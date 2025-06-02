@@ -1,4 +1,4 @@
-// ✅ 완전 통합된 script.js (FLIP: 추가/삭제만 적용, 페이지 전환은 fade-in만, 업로드 버그 수정)
+// ✅ 완전 통합된 script.js (FLIP, 순차 fade-in, pop-in/out, filename 동기화)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -6,10 +6,7 @@ const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
 function getRects() {
-  return Array.from(gallery.children).map(el => ({
-    el,
-    rect: el.getBoundingClientRect()
-  }));
+  return Array.from(gallery.children).map(el => ({ el, rect: el.getBoundingClientRect() }));
 }
 
 function applyFLIP(beforeRects, afterRects) {
@@ -38,9 +35,10 @@ function updatePage(n) {
     .then(res => res.json())
     .then(images => {
       gallery.innerHTML = '';
-      images.forEach((src, i) => {
+      images.forEach((image, i) => {
         const img = document.createElement('img');
-        img.src = src;
+        img.src = image.url;
+        img.dataset.filename = image.filename;
         img.className = 'gallery-image';
 
         img.style.animation = 'none';
@@ -52,7 +50,7 @@ function updatePage(n) {
 
         img.oncontextmenu = (e) => {
           e.preventDefault();
-          const filename = src.split('/').pop();
+          const filename = img.dataset.filename;
           const beforeRects = getRects();
 
           img.classList.add('pop-out');
@@ -65,29 +63,50 @@ function updatePage(n) {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ page: currentPage, filename })
-            });
+            })
+            .then(res => {
+              if (!res.ok) throw new Error('삭제 실패');
+              return res.text();
+            })
+            .then(() => {
+              setTimeout(() => updatePage(currentPage), 150);
+            })
+            .catch(err => console.error('삭제 오류:', err));
+
           }, 400);
         };
 
         gallery.appendChild(img);
       });
-    });
+    })
+    .catch(err => console.error('페이지 로드 오류:', err));
 }
 
 function uploadFiles(files) {
   [...files].forEach(file => {
     const formData = new FormData();
     formData.append('image', file);
-    // formData.append('page', currentPage); ← 제거됨
-    // 페이지 정보는 쿼리스트링으로 전달
 
+    const tempImg = document.createElement('img');
+    tempImg.className = 'gallery-image pop-in';
+    tempImg.style.opacity = '0';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      tempImg.src = e.target.result;
+      gallery.appendChild(tempImg);
+      requestAnimationFrame(() => {
+        tempImg.style.opacity = '1';
+      });
+    };
+    reader.readAsDataURL(file);
 
     fetch(`/upload?page=${currentPage}`, {
       method: 'POST',
       body: formData
-    }).then(() => {
-      setTimeout(() => updatePage(currentPage), 100); // 업로드 후 서버 기준으로 새로고침
-    });
+    })
+    .then(res => res.json())
+    .then(() => updatePage(currentPage))
+    .catch(err => console.error('업로드 오류:', err));
   });
 }
 
