@@ -8,11 +8,13 @@ body, html {
   overflow: hidden;
 }
 
-#page-label {
-  position: absolute;
-  top: 10px;
-  left: 20px;
-  font-size: 18px;
+#drop-zone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
 }
 
 #gallery {
@@ -38,24 +40,4 @@ body, html {
 .gallery-image.zoomed {
   transform: scale(2);
   z-index: 10;
-}
-
-.gallery-image.dragging {
-  transform: scale(1.05);
-  opacity: 0.7;
-}
-
-.fade-in {
-  animation: fadeInUp 0.3s ease;
-}
-
-@keyframes fadeInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
