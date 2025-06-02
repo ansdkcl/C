@@ -45,31 +45,37 @@ function renderImages(images, isPageChange = false) {
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
-      img.src = image.url;
+      // 이미지 캐시 무효화
+      img.src = image.url + `?v=${Date.now()}`;
       img.dataset.filename = image.filename;
       gallery.appendChild(img);
+    } else {
+      // 항상 src를 최신화해서 브라우저가 캐싱 못하게
+      img.src = image.url + `?v=${Date.now()}`;
     }
 
     img.onclick = null;
     img.oncontextmenu = null;
     img.onclick = () => img.classList.toggle('zoomed');
- img.oncontextmenu = (e) => {
-  e.preventDefault();
-  if (img.classList.contains('pop-out')) return;
-  img.classList.add('pop-out');
+    img.oncontextmenu = (e) => {
+      e.preventDefault();
+      if (img.classList.contains('pop-out')) return;
 
-  img.addEventListener('animationend', () => {
-    if (gallery.contains(img)) gallery.removeChild(img);
-  }, { once: true });
+      img.classList.add('pop-out');
 
-  fetch('/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-  });
-};
+      img.addEventListener('animationend', () => {
+        if (gallery.contains(img)) gallery.removeChild(img);
+        fetch(`/images/${getPageFolder(currentPage)}?v=${Date.now()}`, { cache: 'no-store' })
+          .then(res => res.json())
+          .then(images => renderImages(images, false));
+      }, { once: true });
 
-
+      fetch('/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
+      });
+    };
 
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;
@@ -96,7 +102,7 @@ function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
   const pageFolder = getPageFolder(currentPage);
-  fetch(`/images/${pageFolder}`, { cache: 'no-store' })
+  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
     .then(res => res.json())
     .then(images => renderImages(images, true))
     .catch(err => console.error('페이지 로드 오류:', err));
@@ -116,7 +122,7 @@ function uploadFiles(files) {
     })
       .then(res => res.json())
       .then(({ filename }) => {
-        fetch(`/images/${pageFolder}`, { cache: 'no-store' })
+        fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(images => {
             const afterRects = getRects();
