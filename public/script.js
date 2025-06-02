@@ -55,7 +55,7 @@ function renderImages(images, isPageChange = false) {
 
     img.oncontextmenu = (e) => {
       e.preventDefault();
-      console.log('삭제 시도:', img.dataset.filename);
+      console.log('우클릭 삭제 요청 시작:', img.dataset.filename);
 
       const filename = img.dataset.filename;
       const beforeRects = getRects();
@@ -77,6 +77,7 @@ function renderImages(images, isPageChange = false) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ page: currentPage, filename })
         }).then(res => {
+          console.log('삭제 요청 응답 상태:', res.status);
           if (res.ok) console.log('서버 삭제 요청 성공:', filename);
           else console.error('서버 삭제 요청 실패:', filename);
         }).catch(err => console.error('삭제 요청 에러:', err));
