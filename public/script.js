@@ -1,5 +1,3 @@
-// ✅ script.js (삭제 시 애니메이션 완료 후 DOM 제거 + FLIP 적용 + 삭제 요청 정상 처리 로그)
-
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');

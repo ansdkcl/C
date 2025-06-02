@@ -1,5 +1,3 @@
-// ✅ 서버 코드 (삭제 경로 타입 문제 수정 포함)
-
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -7,7 +5,6 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 app.use(express.static('public'));
@@ -20,8 +17,8 @@ function ensureDir(dir) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const page = req.query.page;
-    const pageDir = path.join(UPLOAD_DIR, String(page));
+    const page = String(req.query.page);
+    const pageDir = path.join(UPLOAD_DIR, page);
     ensureDir(pageDir);
     cb(null, pageDir);
   },
@@ -30,11 +27,10 @@ const storage = multer.diskStorage({
     cb(null, uniqueName);
   }
 });
-
 const upload = multer({ storage });
 
 app.post('/upload', upload.single('image'), (req, res) => {
-  const page = req.query.page;
+  const page = String(req.query.page);
   const filename = req.file.filename;
   res.json({ filename });
 });
@@ -54,21 +50,21 @@ app.get('/images/:page', (req, res) => {
 });
 
 app.post('/delete', (req, res) => {
+  console.log('삭제 요청 도착:', req.body);
   const { page, filename } = req.body;
   const filePath = path.join(UPLOAD_DIR, String(page), filename);
 
-  console.log('🧹 삭제 요청 경로:', filePath);
   if (!fs.existsSync(filePath)) {
-    console.warn('⚠️ 삭제 대상 파일이 존재하지 않음:', filePath);
+    console.warn('삭제 대상 파일 없음:', filePath);
     return res.status(404).json({ error: '파일 없음' });
   }
 
   fs.unlink(filePath, (err) => {
     if (err) {
-      console.error('❌ 삭제 실패:', err.message);
+      console.error('삭제 실패:', err.message);
       return res.status(500).json({ error: '삭제 실패', detail: err.message });
     }
-    console.log('✅ 삭제 성공:', filename);
+    console.log('삭제 성공:', filename);
     res.sendStatus(200);
   });
 });
