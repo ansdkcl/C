@@ -14,7 +14,7 @@ function loadImages(page) {
       images.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
-        img.classList.add('gallery-image');
+        img.classList.add('gallery-image', 'fade-in');
 
         // 확대/축소 토글
         img.addEventListener('click', () => {
@@ -32,6 +32,16 @@ function loadImages(page) {
               body: JSON.stringify({ page: currentPage, filename })
             }).then(() => loadImages(currentPage));
           }
+        });
+
+        // 드래그 시 애니메이션
+        img.setAttribute('draggable', true);
+        img.addEventListener('dragstart', (e) => {
+  e.dataTransfer.setDragImage(new Image(), 0, 0); // 썸네일 제거
+  img.classList.add('dragging');
+});
+        img.addEventListener('dragend', () => {
+          img.classList.remove('dragging');
         });
 
         gallery.appendChild(img);
@@ -63,7 +73,6 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
-
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
 });
@@ -74,7 +83,6 @@ window.addEventListener('drop', (e) => {
     uploadFiles(e.dataTransfer.files);
   }
 });
-
 
 // 초기 로딩
 updatePage(currentPage);
