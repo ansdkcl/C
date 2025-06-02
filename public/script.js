@@ -3,9 +3,7 @@ let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
-const dropZone = document.getElementById('drop-zone');
 
-// 이미지 로드
 function loadImages(page) {
   fetch(`/images/${page}`)
     .then(res => res.json())
@@ -16,12 +14,10 @@ function loadImages(page) {
         img.src = src;
         img.classList.add('gallery-image', 'fade-in');
 
-        // 확대/축소 토글
         img.addEventListener('click', () => {
           img.classList.toggle('zoomed');
         });
 
-        // 우클릭 → 삭제
         img.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           const filename = src.split('/').pop();
@@ -34,7 +30,6 @@ function loadImages(page) {
           }
         });
 
-        // 드래그 애니메이션
         img.setAttribute('draggable', true);
         img.addEventListener('dragstart', (e) => {
           e.dataTransfer.setDragImage(new Image(), 0, 0);
@@ -67,71 +62,35 @@ function uploadFiles(files) {
   });
 }
 
-// 방향키 페이지 이동
+// 방향키로 페이지 이동
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
-// 썸네일 미리보기 기능
+// 썸네일 미리보기
 let previewImg;
 let previewImgCreated = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
 
 window.addEventListener('dragover', (e) => {
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
   e.preventDefault();
 
   if (!previewImgCreated && e.dataTransfer.files.length > 0) {
+    previewImgCreated = true;
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
-  const result = event.target.result;
-  if (!result.startsWith('data:image/')) return;
+        const result = event.target.result;
+        if (!result.startsWith('data:image/')) return;
 
-  const wrapper = document.createElement('div');
-  wrapper.style.position = 'fixed';
-  wrapper.style.transform = `translate(${e.clientX + 20}px, ${e.clientY + 20}px)`;
-  wrapper.style.width = '120px';
-  wrapper.style.height = '120px';
-  wrapper.style.backgroundColor = '#111';
-  wrapper.style.borderRadius = '8px';
-  wrapper.style.overflow = 'hidden';
-  wrapper.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-  wrapper.style.zIndex = '9999';
-  wrapper.style.pointerEvents = 'none';
-
-  const img = new Image();
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.objectFit = 'cover';
-  img.style.backgroundColor = '#111';
-  img.style.pointerEvents = 'none';
-
-  img.onload = () => {
-    wrapper.appendChild(img);
-    document.body.appendChild(wrapper);
-    previewImg = wrapper;
-    previewImgCreated = true;
-  };
-  img.src = result;
-
-        const img = new Image();
-img.style.width = '100%';
-img.style.height = '100%';
-img.style.objectFit = 'cover';
-img.style.backgroundColor = '#111';
-img.style.pointerEvents = 'none';
-
-img.onload = () => {
-  wrapper.appendChild(img);
-  document.body.appendChild(wrapper);
-  previewImg = wrapper;
-  previewImgCreated = true;
-};
-img.src = result;
-
+        const wrapper = document.createElement('div');
         wrapper.style.position = 'fixed';
-        wrapper.style.transform = `translate(${e.clientX + 20}px, ${e.clientY + 20}px)`;
+        wrapper.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
         wrapper.style.width = '120px';
         wrapper.style.height = '120px';
         wrapper.style.backgroundColor = '#111';
@@ -140,13 +99,29 @@ img.src = result;
         wrapper.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
         wrapper.style.zIndex = '9999';
         wrapper.style.pointerEvents = 'none';
+
+        const img = new Image();
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.backgroundColor = '#111';
+        img.style.pointerEvents = 'none';
+
+        img.onload = () => {
+          wrapper.appendChild(img);
+          document.body.appendChild(wrapper);
+          previewImg = wrapper;
+        };
+
+        img.src = result;
       };
+
       reader.readAsDataURL(file);
     }
   }
 
   if (previewImg) {
-    previewImg.style.transform = `translate(${e.clientX + 20}px, ${e.clientY + 20}px)`;
+    previewImg.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
   }
 });
 
@@ -171,5 +146,5 @@ window.addEventListener('drop', (e) => {
   }
 });
 
-// 초기 로딩
+// 초기 페이지 로드
 updatePage(currentPage);
