@@ -1,4 +1,4 @@
-// ✅ 완전 통합된 script.js (애니메이션 타이밍 개선: pop-in, fade-in)
+// ✅ script.js (깜빡임 제거 + FLIP + pop-in/pout 복원 + 페이드인 순차 애니메이션)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -6,12 +6,16 @@ const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
 function getRects() {
-  return Array.from(gallery.children).map(el => ({ el, rect: el.getBoundingClientRect() }));
+  return Array.from(gallery.children).map(el => ({
+    el,
+    rect: el.getBoundingClientRect(),
+    key: el.dataset.filename || el.src
+  }));
 }
 
 function applyFLIP(beforeRects, afterRects) {
-  afterRects.forEach(({ el }) => {
-    const before = beforeRects.find(b => b.el === el);
+  afterRects.forEach(({ el, key }) => {
+    const before = beforeRects.find(b => b.key === key);
     if (!before) return;
 
     const dx = before.rect.left - el.getBoundingClientRect().left;
@@ -28,89 +32,96 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
+function renderImages(images, isPageChange = false) {
+  const beforeRects = getRects();
+  const existing = [...gallery.children];
+  const existingKeys = new Set(images.map(img => img.filename));
+
+  existing.forEach(child => {
+    if (!existingKeys.has(child.dataset.filename)) {
+      gallery.removeChild(child);
+    }
+  });
+
+  images.forEach((image, i) => {
+    let img = [...gallery.children].find(el => el.dataset.filename === image.filename);
+    if (!img) {
+      img = document.createElement('img');
+      img.src = image.url;
+      img.dataset.filename = image.filename;
+      img.className = 'gallery-image';
+      gallery.appendChild(img);
+    }
+
+    img.onclick = () => img.classList.toggle('zoomed');
+    img.oncontextmenu = (e) => {
+      e.preventDefault();
+      const filename = img.dataset.filename;
+      const beforeRects = getRects();
+
+      img.classList.add('pop-out');
+      setTimeout(() => {
+        if (gallery.contains(img)) gallery.removeChild(img);
+        const afterRects = getRects();
+        applyFLIP(beforeRects, afterRects);
+
+        fetch('/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page: currentPage, filename })
+        })
+          .catch(err => console.error('삭제 오류:', err));
+      }, 350);
+    };
+
+    if (isPageChange) {
+      img.style.animation = `fadeInUp 0.4s ease-out both`;
+      img.style.animationDelay = `${i * 60}ms`;
+    }
+  });
+
+  const afterRects = getRects();
+  applyFLIP(beforeRects, afterRects);
+}
+
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
   fetch(`/images/${currentPage}`)
     .then(res => res.json())
-    .then(images => {
-      gallery.innerHTML = '';
-      images.forEach((image, i) => {
-        const img = document.createElement('img');
-        img.src = image.url;
-        img.dataset.filename = image.filename;
-        img.className = 'gallery-image';
-
-        img.style.animation = 'none';
-        img.style.animationDelay = `${i * 60}ms`;
-        void img.offsetWidth;
-        img.classList.add('fade-in');
-
-        img.onclick = () => img.classList.toggle('zoomed');
-
-        img.oncontextmenu = (e) => {
-          e.preventDefault();
-          const filename = img.dataset.filename;
-          const beforeRects = getRects();
-
-          img.classList.add('pop-out');
-          setTimeout(() => {
-            if (gallery.contains(img)) gallery.removeChild(img);
-            const afterRects = getRects();
-            applyFLIP(beforeRects, afterRects);
-
-            fetch('/delete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ page: currentPage, filename })
-            })
-            .then(res => {
-              if (!res.ok) throw new Error('삭제 실패');
-              return res.text();
-            })
-            .then(() => {
-              setTimeout(() => updatePage(currentPage), 150);
-            })
-            .catch(err => console.error('삭제 오류:', err));
-
-          }, 400);
-        };
-
-        gallery.appendChild(img);
-      });
-    })
+    .then(images => renderImages(images, true))
     .catch(err => console.error('페이지 로드 오류:', err));
 }
 
 function uploadFiles(files) {
+  const beforeRects = getRects();
+
   [...files].forEach(file => {
     const formData = new FormData();
     formData.append('image', file);
-
-    const tempImg = document.createElement('img');
-    tempImg.className = 'gallery-image';
-    tempImg.style.opacity = '0';
-    tempImg.style.animation = 'none';
-    void tempImg.offsetWidth;
-    tempImg.classList.add('pop-in');
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      tempImg.src = e.target.result;
-      gallery.appendChild(tempImg);
-      requestAnimationFrame(() => {
-        tempImg.style.opacity = '1';
-      });
-    };
-    reader.readAsDataURL(file);
 
     fetch(`/upload?page=${currentPage}`, {
       method: 'POST',
       body: formData
     })
-    .then(res => res.json())
-    .then(() => updatePage(currentPage))
-    .catch(err => console.error('업로드 오류:', err));
+      .then(res => res.json())
+      .then(({ filename }) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const tempImg = document.createElement('img');
+          tempImg.src = e.target.result;
+          tempImg.className = 'gallery-image pop-in';
+          tempImg.dataset.filename = filename;
+          gallery.appendChild(tempImg);
+
+          const afterRects = getRects();
+          applyFLIP(beforeRects, afterRects);
+
+          setTimeout(() => updatePage(currentPage), 300);
+        };
+        reader.readAsDataURL(file);
+      })
+      .catch(err => console.error('업로드 오류:', err));
   });
 }
 
