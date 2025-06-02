@@ -3,6 +3,11 @@ const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
+// 현재 페이지에 맞게 폴더명을 반환 (예: page-1, page-2 ...)
+function getPageFolder(n) {
+  return `page-${n}`;
+}
+
 function getRects() {
   return Array.from(gallery.children).map(el => ({
     el,
@@ -32,7 +37,6 @@ function applyFLIP(beforeRects, afterRects) {
 
 function renderImages(images, isPageChange = false) {
   console.log('서버에서 받은 이미지 리스트:', images.map(i => i.filename));
-
   const beforeRects = getRects();
   const existing = [...gallery.children];
   const existingMap = new Map(existing.map(el => [el.dataset.filename, el]));
@@ -58,14 +62,12 @@ function renderImages(images, isPageChange = false) {
       console.log('우클릭 삭제 요청 시작:', img.dataset.filename);
 
       const filename = img.dataset.filename;
-      const beforeRects = getRects();
+      const pageFolder = getPageFolder(currentPage);
 
       img.classList.add('pop-out');
       img.addEventListener('animationend', () => {
-        console.log('애니메이션 종료:', filename);
         if (gallery.contains(img)) {
           gallery.removeChild(img);
-          console.log('DOM에서 이미지 제거 완료:', filename);
           requestAnimationFrame(() => {
             const afterRects = getRects();
             applyFLIP(beforeRects, afterRects);
@@ -75,7 +77,7 @@ function renderImages(images, isPageChange = false) {
         fetch('/delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ page: currentPage, filename })
+          body: JSON.stringify({ page: pageFolder, filename })
         }).then(res => {
           console.log('삭제 요청 응답 상태:', res.status);
           if (res.ok) console.log('서버 삭제 요청 성공:', filename);
@@ -105,7 +107,8 @@ function renderImages(images, isPageChange = false) {
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
-  fetch(`/images/${currentPage}`, { cache: 'no-store' })  // 캐시 방지
+  const pageFolder = getPageFolder(currentPage);
+  fetch(`/images/${pageFolder}`, { cache: 'no-store' }) // 캐시 방지
     .then(res => res.json())
     .then(images => renderImages(images, true))
     .catch(err => console.error('페이지 로드 오류:', err));
@@ -113,18 +116,19 @@ function updatePage(n) {
 
 function uploadFiles(files) {
   const beforeRects = getRects();
+  const pageFolder = getPageFolder(currentPage);
 
   [...files].forEach(file => {
     const formData = new FormData();
     formData.append('image', file);
 
-    fetch(`/upload?page=${currentPage}`, {
+    fetch(`/upload?page=${pageFolder}`, {
       method: 'POST',
       body: formData
     })
       .then(res => res.json())
       .then(({ filename }) => {
-        fetch(`/images/${currentPage}`, { cache: 'no-store' })
+        fetch(`/images/${pageFolder}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(images => {
             console.log('업로드 후 이미지 리스트:', images.map(i => i.filename));
