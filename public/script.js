@@ -4,7 +4,8 @@ const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
-function loadImages(page, popInFilename = null) {
+// 기존 이미지 로딩
+function loadImages(page) {
   fetch(`/images/${page}`)
     .then(res => res.json())
     .then(images => {
@@ -12,12 +13,7 @@ function loadImages(page, popInFilename = null) {
       images.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
-        const filename = src.split('/').pop();
-        if (filename === popInFilename) {
-          img.classList.add('gallery-image', 'pop-in');
-        } else {
-          img.classList.add('gallery-image', 'fade-in');
-        }
+        img.classList.add('gallery-image', 'fade-in');
 
         img.addEventListener('click', () => {
           img.classList.toggle('zoomed');
@@ -25,6 +21,7 @@ function loadImages(page, popInFilename = null) {
 
         img.addEventListener('contextmenu', (e) => {
           e.preventDefault();
+          const filename = src.split('/').pop();
           if (confirm('이 이미지를 삭제할까요?')) {
             fetch('/delete', {
               method: 'POST',
@@ -39,11 +36,14 @@ function loadImages(page, popInFilename = null) {
     });
 }
 
+// 페이지 변경
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
   loadImages(currentPage);
 }
+
+// 새 이미지 업로드 및 팝인 효과
 function uploadFiles(files) {
   [...files].forEach(file => {
     const formData = new FormData();
@@ -54,25 +54,22 @@ function uploadFiles(files) {
       method: 'POST',
       body: formData
     }).then(() => {
-      const img = document.createElement('img');
       const reader = new FileReader();
-
       reader.onload = (e) => {
+        const img = document.createElement('img');
         img.src = e.target.result;
         img.classList.add('gallery-image');
-        gallery.appendChild(img);
 
-        // 다음 프레임에 애니메이션 클래스 추가
+        // 먼저 append 하고 다음 프레임에 애니메이션 적용
+        gallery.appendChild(img);
         requestAnimationFrame(() => {
           img.classList.add('pop-in');
         });
 
-        // 클릭 확대
         img.addEventListener('click', () => {
           img.classList.toggle('zoomed');
         });
 
-        // 우클릭 삭제
         img.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           const filename = file.name;
@@ -85,8 +82,27 @@ function uploadFiles(files) {
           }
         });
       };
-
       reader.readAsDataURL(file);
     });
   });
 }
+
+// 드래그앤드랍 이벤트
+window.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length > 0) {
+    uploadFiles(e.dataTransfer.files);
+  }
+});
+
+// 방향키 페이지 이동
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') updatePage(currentPage + 1);
+  if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
+});
+
+updatePage(currentPage);
