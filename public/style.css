@@ -1,3 +1,4 @@
+/* 기본 세팅 */
 body, html {
   margin: 0;
   padding: 0;
@@ -8,6 +9,7 @@ body, html {
   overflow: hidden;
 }
 
+/* 갤러리 설정 */
 #gallery {
   display: flex;
   justify-content: center;
@@ -20,26 +22,28 @@ body, html {
   box-sizing: border-box;
 }
 
+/* 이미지 설정 */
 .gallery-image {
   max-width: 600px;
   max-height: 90vh;
   object-fit: contain;
   border-radius: 10px;
   cursor: pointer;
-
-  /* FLIP을 위한 기본 트랜지션 */
+  /* FLIP 트랜지션 적용 */
   transition:
     transform 0.5s ease-in-out,
-    opacity 0.5s ease-in-out,
+    opacity 0.4s ease-in-out,
     margin 0.5s ease-in-out;
+  transform: translate(0, 0);
 }
 
+/* 확대 효과 */
 .gallery-image.zoomed {
   transform: scale(2);
   z-index: 10;
 }
 
-/* 순차 fade-in */
+/* 순차적 페이드인 */
 .fade-in {
   animation: fadeInUp 0.4s ease-out both;
 }
@@ -55,7 +59,7 @@ body, html {
   }
 }
 
-/* pop-in: 이미지 추가 시 */
+/* 이미지 추가 시 pop-in */
 .pop-in {
   animation: popInSmooth 0.4s ease-out forwards;
 }
@@ -71,9 +75,10 @@ body, html {
   }
 }
 
-/* pop-out: 이미지 삭제 시 */
+/* 이미지 삭제 시 pop-out */
 .pop-out {
   animation: popOutSmooth 0.35s ease-in forwards;
+  pointer-events: none;
 }
 
 @keyframes popOutSmooth {

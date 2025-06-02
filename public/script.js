@@ -1,4 +1,4 @@
-// ✅ script.js (FLIP 정확한 적용 및 깜빡임 제거 + 이미지 추가/삭제 시 부드럽게 밀림 애니메이션 적용)
+// ✅ script.js (FLIP 정확한 적용 + 삭제 시 부드럽게 적용 + 삭제 시 FLIP 적용 위치 수정)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -34,34 +34,33 @@ function applyFLIP(beforeRects, afterRects) {
 
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
-  const currentImageMap = new Map();
+  const existing = [...gallery.children];
+  const existingMap = new Map(existing.map(el => [el.dataset.filename, el]));
 
-  for (const child of [...gallery.children]) {
-    currentImageMap.set(child.dataset.filename, child);
-  }
-
-  const newImageMap = new Map();
+  const filenames = new Set();
 
   images.forEach((image, i) => {
-    newImageMap.set(image.filename, image);
-    let img = currentImageMap.get(image.filename);
+    filenames.add(image.filename);
+    let img = existingMap.get(image.filename);
 
     if (!img) {
       img = document.createElement('img');
       img.src = image.url;
+      img.className = 'gallery-image';
       img.dataset.filename = image.filename;
-      img.className = 'gallery-image pop-in';
+      img.classList.add('pop-in');
       gallery.appendChild(img);
     }
 
     img.onclick = () => img.classList.toggle('zoomed');
+
     img.oncontextmenu = (e) => {
       e.preventDefault();
       const filename = img.dataset.filename;
       const beforeRects = getRects();
 
       img.classList.add('pop-out');
-      setTimeout(() => {
+      img.addEventListener('animationend', () => {
         if (gallery.contains(img)) {
           gallery.removeChild(img);
           requestAnimationFrame(() => {
@@ -75,7 +74,7 @@ function renderImages(images, isPageChange = false) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ page: currentPage, filename })
         }).catch(err => console.error('삭제 오류:', err));
-      }, 350);
+      }, { once: true });
     };
 
     if (isPageChange) {
@@ -84,24 +83,16 @@ function renderImages(images, isPageChange = false) {
     }
   });
 
-  // 제거된 이미지 처리 후 FLIP 적용
-  const toRemove = [...currentImageMap.keys()].filter(key => !newImageMap.has(key));
-  if (toRemove.length > 0) {
-    const rectsBefore = getRects();
-    toRemove.forEach(key => {
-      const el = currentImageMap.get(key);
-      if (gallery.contains(el)) gallery.removeChild(el);
-    });
-    requestAnimationFrame(() => {
-      const rectsAfter = getRects();
-      applyFLIP(rectsBefore, rectsAfter);
-    });
-  } else {
-    requestAnimationFrame(() => {
-      const afterRects = getRects();
-      applyFLIP(beforeRects, afterRects);
-    });
-  }
+  existing.forEach(el => {
+    if (!filenames.has(el.dataset.filename)) {
+      gallery.removeChild(el);
+    }
+  });
+
+  requestAnimationFrame(() => {
+    const afterRects = getRects();
+    applyFLIP(beforeRects, afterRects);
+  });
 }
 
 function updatePage(n) {
