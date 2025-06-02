@@ -1,5 +1,4 @@
 let currentPage = 1;
-
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
@@ -13,15 +12,11 @@ function loadImages(page) {
         const img = document.createElement('img');
         img.src = src;
         img.classList.add('gallery-image');
-
-        img.addEventListener('click', () => {
-          img.classList.toggle('zoomed');
-        });
-
+        img.addEventListener('click', () => img.classList.toggle('zoomed'));
         img.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           const filename = src.split('/').pop();
-          if (confirm('이 이미지를 삭제할까요?')) {
+          if (confirm('삭제할까요?')) {
             fetch('/delete', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -29,16 +24,9 @@ function loadImages(page) {
             }).then(() => loadImages(currentPage));
           }
         });
-
         gallery.appendChild(img);
       });
     });
-}
-
-function updatePage(n) {
-  currentPage = n;
-  pageNum.textContent = currentPage;
-  loadImages(currentPage);
 }
 
 function uploadFiles(files) {
@@ -58,53 +46,40 @@ let previewImgCreated = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
-window.addEventListener('dragenter', (e) => {
-  e.preventDefault();
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-
-  const items = e.dataTransfer?.items;
-  if (!previewImgCreated && items && items.length > 0 && items[0].kind === 'file') {
-    const file = items[0].getAsFile();
-    if (!file || !file.type.startsWith('image/')) return;
-
-    previewImgCreated = true;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target.result;
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'fixed';
-      wrapper.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
-      wrapper.style.width = '360px';
-      wrapper.style.height = '360px';
-      wrapper.style.backgroundColor = '#111';
-      wrapper.style.borderRadius = '12px';
-      wrapper.style.overflow = 'hidden';
-      wrapper.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.7)';
-      wrapper.style.border = '2px solid #444';
-      wrapper.style.zIndex = '9999';
-      wrapper.style.pointerEvents = 'none';
-
-      const img = new Image();
-      img.src = result;
-      img.style.width = '100%';
-      img.style.height = '100%';
-      img.style.objectFit = 'cover';
-      img.style.pointerEvents = 'none';
-
-      wrapper.appendChild(img);
-      document.body.appendChild(wrapper);
-      previewImg = wrapper;
-    };
-
-    reader.readAsDataURL(file);
-  }
-});
-
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
+  if (!previewImgCreated && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    previewImgCreated = true;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
+      wrapper.style.width = '120px';
+      wrapper.style.height = '120px';
+      wrapper.style.backgroundColor = '#111';
+      wrapper.style.borderRadius = '8px';
+      wrapper.style.overflow = 'hidden';
+      wrapper.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+      wrapper.style.zIndex = '9999';
+      wrapper.style.pointerEvents = 'none';
+
+      const img = new Image();
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      img.src = event.target.result;
+      wrapper.appendChild(img);
+      document.body.appendChild(wrapper);
+      previewImg = wrapper;
+    };
+    reader.readAsDataURL(file);
+  }
+
   if (previewImg) {
     previewImg.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
   }
@@ -121,19 +96,13 @@ window.addEventListener('dragleave', () => {
 window.addEventListener('drop', (e) => {
   e.preventDefault();
   if (previewImg) {
-    previewImg.style.transition = 'transform 0.5s ease, opacity 0.4s ease';
-    previewImg.style.transform = 'translate(50vw, 50vh) scale(0.5)';
-    previewImg.style.opacity = '0';
-    setTimeout(() => {
-      previewImg.remove();
-      previewImg = null;
-      previewImgCreated = false;
-    }, 500);
+    previewImg.remove();
+    previewImg = null;
+    previewImgCreated = false;
   }
-
   if (e.dataTransfer.files.length > 0) {
     uploadFiles(e.dataTransfer.files);
   }
 });
 
-updatePage(currentPage);
+loadImages(currentPage);

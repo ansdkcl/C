@@ -1,33 +1,28 @@
-body, html {
+body {
   margin: 0;
-  padding: 0;
-  height: 100%;
   background: #111;
   color: white;
   font-family: sans-serif;
-  overflow: hidden;
 }
-
+#drop-zone {
+  width: 100vw;
+  height: 100vh;
+  text-align: center;
+  padding: 20px;
+}
 #gallery {
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
-  gap: 20px;
-  padding: 20px;
-  box-sizing: border-box;
+  gap: 10px;
 }
-
 .gallery-image {
-  max-width: 600px;
-  max-height: 90vh;
-  object-fit: contain;
-  border-radius: 10px;
-  transition: transform 0.3s ease;
-  cursor: pointer;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: transform 0.3s;
 }
-
 .gallery-image.zoomed {
   transform: scale(2);
   z-index: 10;
