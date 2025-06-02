@@ -50,32 +50,26 @@ function renderImages(images, isPageChange = false) {
       gallery.appendChild(img);
     }
 
-    // 항상 이벤트 강제 재등록
     img.onclick = null;
     img.oncontextmenu = null;
-
     img.onclick = () => img.classList.toggle('zoomed');
-    img.oncontextmenu = (e) => {
-      e.preventDefault();
-      if (img.classList.contains('pop-out')) return;
+ img.oncontextmenu = (e) => {
+  e.preventDefault();
+  if (img.classList.contains('pop-out')) return;
+  img.classList.add('pop-out');
 
-      img.classList.add('pop-out');
+  img.addEventListener('animationend', () => {
+    if (gallery.contains(img)) gallery.removeChild(img);
+  }, { once: true });
 
-      img.addEventListener('animationend', () => {
-        if (gallery.contains(img)) gallery.removeChild(img);
+  fetch('/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
+  });
+};
 
-        // DOM에서 사라진 뒤 반드시 서버 상태와 동기화
-        fetch(`/images/${getPageFolder(currentPage)}`, { cache: 'no-store' })
-          .then(res => res.json())
-          .then(images => renderImages(images, false));
-      }, { once: true });
 
-      fetch('/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-      });
-    };
 
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;

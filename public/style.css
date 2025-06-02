@@ -38,11 +38,19 @@ body, html {
   z-index: 10;
 }
 
+/* 삭제 시 팝아웃 */
 .gallery-image.pop-out {
-  animation: popOut 0.3s cubic-bezier(0.6,0,0.7,1) both;
+  animation: popOutSmooth 0.35s ease-in forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
-@keyframes popOut {
-  to {
+
+@keyframes popOutSmooth {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
     opacity: 0;
     transform: scale(0.8) rotate(-12deg);
     filter: blur(2px);
@@ -79,23 +87,5 @@ body, html {
   100% {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-/* 이미지 삭제 시 */
-.pop-out {
-  animation: popOutSmooth 0.35s ease-in forwards;
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-
-@keyframes popOutSmooth {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.8);
   }
 }
