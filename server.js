@@ -1,9 +1,13 @@
 const express = require('express');
+const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 
-const app = express();
+const app = express(); // << 반드시 먼저!
+
+app.use(cors()); // << 그리고 여기서부터 미들웨어
+
 const PORT = process.env.PORT || 3000;
 
 // ★ 꼭 프로젝트 루트 uploads로 경로 맞춰주기

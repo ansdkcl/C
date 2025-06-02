@@ -52,12 +52,12 @@ function renderImages(images, isPageChange = false) {
     }
 
     img.onclick = () => img.classList.toggle('zoomed');
-
-   img.oncontextmenu = (e) => {
+img.oncontextmenu = (e) => {
   e.preventDefault();
   const filename = img.dataset.filename;
   const pageFolder = getPageFolder(currentPage);
 
+  console.log('삭제 요청', { page: pageFolder, filename }); // 이 코드 반드시 넣기
   img.classList.add('pop-out');
   img.addEventListener('animationend', () => {
     if (gallery.contains(img)) {
