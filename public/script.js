@@ -32,6 +32,13 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
+function fetchImagesAndRender(isPageChange = false) {
+  const pageFolder = getPageFolder(currentPage);
+  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
+    .then(res => res.json())
+    .then(images => renderImages(images, isPageChange));
+}
+
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -45,18 +52,20 @@ function renderImages(images, isPageChange = false) {
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
-      // 이미지 캐시 무효화
       img.src = image.url + `?v=${Date.now()}`;
       img.dataset.filename = image.filename;
       gallery.appendChild(img);
     } else {
-      // 항상 src를 최신화해서 브라우저가 캐싱 못하게
       img.src = image.url + `?v=${Date.now()}`;
     }
 
-    img.onclick = null;
-    img.oncontextmenu = null;
-    img.onclick = () => img.classList.toggle('zoomed');
+    // 클릭, 우클릭 이벤트 항상 새로 할당!
+    img.onclick = () => {
+      document.querySelectorAll('.gallery-image.zoomed').forEach(el => {
+        if (el !== img) el.classList.remove('zoomed');
+      });
+      img.classList.toggle('zoomed');
+    };
     img.oncontextmenu = (e) => {
       e.preventDefault();
       if (img.classList.contains('pop-out')) return;
@@ -65,15 +74,15 @@ function renderImages(images, isPageChange = false) {
 
       img.addEventListener('animationend', () => {
         if (gallery.contains(img)) gallery.removeChild(img);
-        fetch(`/images/${getPageFolder(currentPage)}?v=${Date.now()}`, { cache: 'no-store' })
-          .then(res => res.json())
-          .then(images => renderImages(images, false));
+        fetchImagesAndRender(false);
       }, { once: true });
 
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
+      }).then(() => {
+        setTimeout(fetchImagesAndRender, 1000);
       });
     };
 
@@ -101,11 +110,7 @@ function renderImages(images, isPageChange = false) {
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
-  const pageFolder = getPageFolder(currentPage);
-  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
-    .then(res => res.json())
-    .then(images => renderImages(images, true))
-    .catch(err => console.error('페이지 로드 오류:', err));
+  fetchImagesAndRender(true);
 }
 
 function uploadFiles(files) {
@@ -122,15 +127,8 @@ function uploadFiles(files) {
     })
       .then(res => res.json())
       .then(({ filename }) => {
-        fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
-          .then(res => res.json())
-          .then(images => {
-            const afterRects = getRects();
-            applyFLIP(beforeRects, afterRects);
-            renderImages(images, false);
-          });
-      })
-      .catch(err => console.error('업로드 오류:', err));
+        fetchImagesAndRender(false);
+      });
   });
 }
 
