@@ -56,50 +56,38 @@ function uploadFiles(files) {
 
 // 썸네일 미리보기
 let previewImg = null;
-let previewImgCreated = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
+
+window.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  if (previewImg || !e.dataTransfer.types.includes('Files')) return;
+
+  const file = e.dataTransfer.items?.[0]?.getAsFile?.();
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    previewImg = new Image();
+    previewImg.src = event.target.result;
+    previewImg.id = 'preview-image';
+    previewImg.style.position = 'fixed';
+    previewImg.style.top = '20px';
+    previewImg.style.left = '20px';
+    previewImg.style.width = '200px';
+    previewImg.style.zIndex = '9999';
+    previewImg.style.border = '2px solid #666';
+    previewImg.style.borderRadius = '8px';
+    previewImg.style.boxShadow = '0 0 20px rgba(0,0,0,0.8)';
+    previewImg.style.pointerEvents = 'none';
+    document.body.appendChild(previewImg);
+  };
+  reader.readAsDataURL(file);
+});
 
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-
-  if (!previewImgCreated && e.dataTransfer.files.length > 0) {
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      previewImgCreated = true;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imgWrapper = document.createElement('div');
-        imgWrapper.style.position = 'fixed';
-        imgWrapper.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
-        imgWrapper.style.width = '120px';
-        imgWrapper.style.height = '120px';
-        imgWrapper.style.borderRadius = '8px';
-        imgWrapper.style.overflow = 'hidden';
-        imgWrapper.style.zIndex = '9999';
-        imgWrapper.style.pointerEvents = 'none';
-        imgWrapper.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
-        imgWrapper.style.transition = 'opacity 0.2s ease';
-        imgWrapper.style.opacity = '0.9';
-
-        const img = new Image();
-        img.src = event.target.result;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        imgWrapper.appendChild(img);
-
-        document.body.appendChild(imgWrapper);
-        previewImg = imgWrapper;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
   if (previewImg) {
-    previewImg.style.transform = `translate(${lastMouseX + 20}px, ${lastMouseY + 20}px)`;
+    previewImg.style.top = `${e.clientY + 20}px`;
+    previewImg.style.left = `${e.clientX + 20}px`;
   }
 });
 
@@ -107,23 +95,14 @@ window.addEventListener('dragleave', () => {
   if (previewImg) {
     previewImg.remove();
     previewImg = null;
-    previewImgCreated = false;
   }
 });
 
 window.addEventListener('drop', (e) => {
   e.preventDefault();
-
   if (previewImg) {
-    previewImg.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
-    previewImg.style.transform = 'translate(50vw, 50vh) scale(0.5)';
-    previewImg.style.opacity = '0';
-
-    setTimeout(() => {
-      previewImg.remove();
-      previewImg = null;
-      previewImgCreated = false;
-    }, 400);
+    previewImg.remove();
+    previewImg = null;
   }
 
   if (e.dataTransfer.files.length > 0) {
@@ -131,11 +110,10 @@ window.addEventListener('drop', (e) => {
   }
 });
 
-// 방향키 페이지 이동
+// 페이지 이동
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
-// 초기 로딩
 updatePage(currentPage);
