@@ -1,4 +1,4 @@
-// ✅ script.js (FLIP 정확한 적용 + 삭제 시 부드럽게 적용 + 삭제 시 FLIP 적용 위치 수정)
+// ✅ script.js (FLIP 정확한 적용 + 삭제 시 FLIP 작동 + pop-out 효과 복구)
 
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
@@ -36,7 +36,6 @@ function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
   const existingMap = new Map(existing.map(el => [el.dataset.filename, el]));
-
   const filenames = new Set();
 
   images.forEach((image, i) => {
