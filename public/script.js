@@ -34,6 +34,10 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
+// 삭제 중인 이미지 집합
+// 삭제 중인 이미지 집합
+const deletingImages = new Set();
+
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -41,66 +45,83 @@ function renderImages(images, isPageChange = false) {
   const filenames = new Set();
 
   images.forEach((image, i) => {
-  filenames.add(image.filename);
-  let img = existingMap.get(image.filename);
+    // 삭제 대기중인 이미지는 append/갱신 대상에서 제외!
+    if (deletingImages.has(image.filename)) return;
 
-  if (!img) {
-    img = document.createElement('img');
-    img.src = image.url;
-    img.className = 'gallery-image';
-    img.dataset.filename = image.filename;
-    img.classList.add('pop-in');
-    gallery.appendChild(img);
-  }
+    filenames.add(image.filename);
+    let img = existingMap.get(image.filename);
 
-  // **이벤트 리스너 중복 방지**
-  img.onclick = null;
-  img.oncontextmenu = null;
+    if (!img) {
+      img = document.createElement('img');
+      img.src = image.url;
+      img.className = 'gallery-image';
+      img.dataset.filename = image.filename;
+      img.classList.add('pop-in');
+      gallery.appendChild(img);
+    }
 
-  img.onclick = () => img.classList.toggle('zoomed');
-  img.oncontextmenu = (e) => {
-    e.preventDefault();
-    const filename = img.dataset.filename;
-    const pageFolder = getPageFolder(currentPage);
+    img.onclick = null;
+    img.oncontextmenu = null;
 
-    fetch('/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: pageFolder, filename })
-    })
+    img.onclick = () => img.classList.toggle('zoomed');
+
+    img.oncontextmenu = (e) => {
+      e.preventDefault();
+      if (img.classList.contains('pop-out') || deletingImages.has(img.dataset.filename)) return;
+      const filename = img.dataset.filename;
+      const pageFolder = getPageFolder(currentPage);
+
+      // 삭제 중임을 Set에 추가
+      deletingImages.add(filename);
+
+      // pop-out 애니메이션
+      img.classList.add('pop-out');
+
+      // 서버에 삭제 요청
+      fetch('/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: pageFolder, filename })
+      })
       .then(res => {
-        if (res.ok) {
-          fetch(`/images/${pageFolder}`, { cache: 'no-store' })
-            .then(res => res.json())
-            .then(images => renderImages(images, false));
-        } else {
-          console.log('서버 삭제 실패');
+        if (!res.ok) {
+          // 삭제 실패시 롤백
+          deletingImages.delete(filename);
+          img.classList.remove('pop-out');
+          return;
         }
       })
-      .catch(err => console.error('삭제 요청 에러:', err));
+      .catch(err => {
+        deletingImages.delete(filename);
+        img.classList.remove('pop-out');
+        console.error('삭제 요청 에러:', err);
+      });
 
-    // 애니메이션 적용(항상 pop-out 적용)
-    img.classList.add('pop-out');
-    img.addEventListener('animationend', () => {
-      if (gallery.contains(img)) {
-        gallery.removeChild(img);
-        requestAnimationFrame(() => {
-          const afterRects = getRects();
-          applyFLIP(getRects(), afterRects);
-        });
-      }
-    }, { once: true });
-  };
+      img.addEventListener('animationend', () => {
+        if (gallery.contains(img)) {
+          gallery.removeChild(img);
+        }
+        // Set에서 삭제
+        deletingImages.delete(filename);
 
-  if (isPageChange) {
-    img.style.animation = `fadeInUp 0.4s ease-out both`;
-    img.style.animationDelay = `${i * 60}ms`;
-  }
-});
+        // **삭제 후 목록 갱신**
+        fetch(`/images/${pageFolder}`, { cache: 'no-store' })
+          .then(res => res.json())
+          .then(images => renderImages(images, false));
+      }, { once: true });
+    };
 
+    if (isPageChange) {
+      img.style.animation = `fadeInUp 0.4s ease-out both`;
+      img.style.animationDelay = `${i * 60}ms`;
+    }
+  });
+
+  // 기존 이미지 중 더 이상 없는 것 삭제,
+  // 또는 "삭제 중"인 이미지는 반드시 DOM에서 remove (Set 사용)
   existing.forEach(el => {
-    if (!filenames.has(el.dataset.filename)) {
-      gallery.removeChild(el);
+    if ((!filenames.has(el.dataset.filename)) || deletingImages.has(el.dataset.filename)) {
+      if (gallery.contains(el)) gallery.removeChild(el);
     }
   });
 
@@ -109,6 +130,8 @@ function renderImages(images, isPageChange = false) {
     applyFLIP(beforeRects, afterRects);
   });
 }
+
+
 
 function updatePage(n) {
   currentPage = n;
