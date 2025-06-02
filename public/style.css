@@ -27,7 +27,7 @@ body, html {
   border-radius: 10px;
   cursor: pointer;
   transition:
-    transform 0.5s ease-in-out,
+    transform 0.5s cubic-bezier(0.4,0.2,0.2,1),
     opacity 0.5s ease-in-out,
     margin 0.5s ease-in-out;
   transform: translate(0, 0);

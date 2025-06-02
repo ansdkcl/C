@@ -9,7 +9,7 @@ const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOAD_DIR));
-app.use(express.json());
+app.use(express.json()); // 반드시 있어야 req.body 사용 가능!
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -50,15 +50,17 @@ app.get('/images/:page', (req, res) => {
 });
 
 app.post('/delete', (req, res) => {
-  console.log('삭제 요청 도착:', req.body);
+  console.log('삭제 요청 도착:', req.body); // body 잘 찍히는지 반드시 확인
   const { page, filename } = req.body;
-  const filePath = path.join(UPLOAD_DIR, String(page), filename);
+  if (!page || !filename) {
+    return res.status(400).json({ error: '잘못된 요청' });
+  }
+  const filePath = path.join(UPLOAD_DIR, page, filename);
 
   if (!fs.existsSync(filePath)) {
     console.warn('삭제 대상 파일 없음:', filePath);
     return res.status(404).json({ error: '파일 없음' });
   }
-
   fs.unlink(filePath, (err) => {
     if (err) {
       console.error('삭제 실패:', err.message);
