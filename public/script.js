@@ -34,12 +34,12 @@ function loadImages(page) {
           }
         });
 
-        // 드래그 시 애니메이션
+        // 드래그 애니메이션
         img.setAttribute('draggable', true);
         img.addEventListener('dragstart', (e) => {
-  e.dataTransfer.setDragImage(new Image(), 0, 0); // 썸네일 제거
-  img.classList.add('dragging');
-});
+          e.dataTransfer.setDragImage(new Image(), 0, 0);
+          img.classList.add('dragging');
+        });
         img.addEventListener('dragend', () => {
           img.classList.remove('dragging');
         });
@@ -73,12 +73,71 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
+// 썸네일 미리보기 기능
+let previewImg;
+
+window.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+
+  if (!previewImg && e.dataTransfer.items.length > 0) {
+    const item = e.dataTransfer.items[0];
+    if (item.kind === 'file') {
+      const file = item.getAsFile();
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'absolute';
+          wrapper.style.left = `${e.pageX + 20}px`;
+          wrapper.style.top = `${e.pageY + 20}px`;
+          wrapper.style.width = '120px';
+          wrapper.style.height = '120px';
+          wrapper.style.backgroundColor = '#111';
+          wrapper.style.borderRadius = '8px';
+          wrapper.style.overflow = 'hidden';
+          wrapper.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+          wrapper.style.zIndex = '9999';
+          wrapper.style.pointerEvents = 'none';
+
+          const img = document.createElement('img');
+          img.src = event.target.result;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'contain';
+          img.style.pointerEvents = 'none';
+
+          wrapper.appendChild(img);
+          document.body.appendChild(wrapper);
+          previewImg = wrapper;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+});
+
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
+  if (previewImg) {
+    previewImg.style.left = `${e.pageX + 20}px`;
+    previewImg.style.top = `${e.pageY + 20}px`;
+  }
+});
+
+window.addEventListener('dragleave', () => {
+  if (previewImg) {
+    previewImg.remove();
+    previewImg = null;
+  }
 });
 
 window.addEventListener('drop', (e) => {
   e.preventDefault();
+  if (previewImg) {
+    previewImg.remove();
+    previewImg = null;
+  }
+
   if (e.dataTransfer.files.length > 0) {
     uploadFiles(e.dataTransfer.files);
   }
