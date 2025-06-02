@@ -115,7 +115,31 @@ window.addEventListener('dragover', (e) => {
   };
   img.src = result;
 
-        
+        const img = new Image();
+img.style.width = '100%';
+img.style.height = '100%';
+img.style.objectFit = 'cover';
+img.style.backgroundColor = '#111';
+img.style.pointerEvents = 'none';
+
+img.onload = () => {
+  wrapper.appendChild(img);
+  document.body.appendChild(wrapper);
+  previewImg = wrapper;
+  previewImgCreated = true;
+};
+img.src = result;
+
+        wrapper.style.position = 'fixed';
+        wrapper.style.transform = `translate(${e.clientX + 20}px, ${e.clientY + 20}px)`;
+        wrapper.style.width = '120px';
+        wrapper.style.height = '120px';
+        wrapper.style.backgroundColor = '#111';
+        wrapper.style.borderRadius = '8px';
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        wrapper.style.zIndex = '9999';
+        wrapper.style.pointerEvents = 'none';
       };
       reader.readAsDataURL(file);
     }
