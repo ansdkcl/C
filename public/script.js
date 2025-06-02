@@ -53,42 +53,28 @@ function renderImages(images, isPageChange = false) {
 
     img.onclick = () => img.classList.toggle('zoomed');
 
-img.oncontextmenu = (e) => {
-  e.preventDefault();
-  const filename = img.dataset.filename;
-  const beforeRects = getRects();
+    img.oncontextmenu = (e) => {
+      e.preventDefault();
+      const filename = img.dataset.filename;
+      const beforeRects = getRects();
 
-  img.classList.add('pop-out');
-  
-  img.addEventListener('animationend', () => {
-    if (!gallery.contains(img)) return;
+      img.classList.add('pop-out');
+      img.addEventListener('animationend', () => {
+        if (gallery.contains(img)) {
+          gallery.removeChild(img);
+          requestAnimationFrame(() => {
+            const afterRects = getRects();
+            applyFLIP(beforeRects, afterRects);
+          });
+        }
 
-    // 삭제 전에 다음 위치 정보 미리 측정
-    const temp = [...gallery.children].filter(el => el !== img);
-    const afterRects = temp.map(el => ({
-      el,
-      rect: el.getBoundingClientRect(),
-      key: el.dataset.filename
-    }));
-
-    // 실제 DOM에서 제거
-    gallery.removeChild(img);
-
-    // FLIP 적용
-    requestAnimationFrame(() => {
-      applyFLIP(beforeRects, afterRects);
-    });
-
-    // 서버에도 삭제 요청
-    fetch('/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: currentPage, filename })
-    }).catch(err => console.error('삭제 오류:', err));
-  }, { once: true });
-};
-
-
+        fetch('/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page: currentPage, filename })
+        }).catch(err => console.error('삭제 오류:', err));
+      }, { once: true });
+    };
 
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;
