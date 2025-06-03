@@ -7,6 +7,10 @@ const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 // Cloudinary 설정
@@ -71,16 +75,14 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 // 이미지 목록 조회
 app.get('/images/:page', (req, res) => {
   const pageDir = path.join(UPLOAD_DIR, String(req.params.page));
+  console.log('요청된 페이지 폴더:', pageDir); // 디버깅용 로그 추가
   ensureDir(pageDir);
   fs.readdir(pageDir, (err, files) => {
     if (err) return res.json([]);
-    const images = files.map(f => ({
-      url: `/uploads/${req.params.page}/${f}`,
-      filename: f
-    }));
-    res.json(images);
+    res.json(files.map(f => ({ url: `/uploads/${req.params.page}/${f}`, filename: f })));
   });
 });
+
 
 // 이미지 삭제
 // 파일 삭제 시 올바른 경로 전달 여부 확인
