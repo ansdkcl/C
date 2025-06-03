@@ -111,6 +111,7 @@ function renderImages(images, isPageChange = false) {
   });
 }
 
+
 // 페이지 이동 함수
 function updatePage(n) {
   currentPage = n;
