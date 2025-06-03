@@ -85,23 +85,14 @@ app.get('/images/:page', (req, res) => {
 // 이미지 삭제
 app.post('/delete', (req, res) => {
   const { filename } = req.body; // 삭제할 파일 이름
-  if (!filename) {
-    return res.status(400).json({ error: '잘못된 요청: filename이 없습니다.' });
-  }
-
   const filePath = path.join(UPLOAD_DIR, filename);
   fs.unlink(filePath, (err) => {
     if (err) {
-      console.error('파일 삭제 실패:', err);
       return res.status(500).json({ error: '파일 삭제 실패', detail: err.message });
     }
-    console.log('파일 삭제 성공:', filename);
     res.status(200).json({ message: '파일 삭제 성공' });
   });
 });
-
-
-
 
 // **정적 파일 서빙은 마지막에!**
 app.use(express.static('public'));
