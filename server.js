@@ -9,6 +9,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
+// CORS 설정
+app.use(cors({
+  origin: '*', // 모든 출처에서 접근 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
 // Cloudinary 설정
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -16,13 +22,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Middleware 설정
-app.use(cors());
-app.use(express.json());
-
 // 기본 경로 처리
 app.get('/', (req, res) => {
-  console.log('Received GET request at /');
   res.send('Hello, world!');
 });
 

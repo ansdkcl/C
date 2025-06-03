@@ -41,7 +41,6 @@ function fetchImagesAndRender(isPageChange = false) {
   fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
     .then(res => res.json())
     .then(images => {
-      console.log('Fetched images:', images); // 이미지를 정상적으로 가져왔는지 확인
       renderImages(images, isPageChange);
     });
 }
