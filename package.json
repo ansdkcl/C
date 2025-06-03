@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "image-uploader",
   "version": "1.0.0",
   "description": "Simple image uploader",
@@ -14,4 +15,24 @@
   "engines": {
     "node": ">=14.0.0"
   }
+=======
+  "name": "my-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "multer": "^2.0.0",
+    "path": "^0.12.7"
+  },
+  "description": ""
+>>>>>>> 9f5df95e473de7151560e8ba1715adfead6292b6
 }
