@@ -17,16 +17,26 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// 미들웨어
 app.use(cors());
 app.use(express.json());
+
+// ✅ 정적 파일 서비스 설정
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ✅ 루트 경로 접근 시 index.html 반환
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// uploads 폴더 자동 생성
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
 
+// multer 설정
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const page = String(req.query.page);
@@ -39,9 +49,9 @@ const storage = multer.diskStorage({
     cb(null, uniqueName);
   }
 });
-
 const upload = multer({ storage });
 
+// ✅ 이미지 업로드
 app.post('/upload', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -61,6 +71,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 });
 
+// ✅ 이미지 목록 조회 (클라이언트에서 사용)
 app.get('/images/:page', (req, res) => {
   const pageDir = path.join(UPLOAD_DIR, req.params.page);
   ensureDir(pageDir);
@@ -71,14 +82,17 @@ app.get('/images/:page', (req, res) => {
     res.json(
       files.map(f => ({
         filename: f,
-        url: `/uploads/${req.params.page}/${f}` // fallback 경로
+        url: `/uploads/${req.params.page}/${f}` // fallback 용
       }))
     );
   });
 });
 
+// ✅ 이미지 삭제
 app.post('/delete', (req, res) => {
   const { filename, page } = req.body;
+  if (!filename || !page) return res.status(400).json({ error: 'filename/page required' });
+
   const filePath = path.join(UPLOAD_DIR, page, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
 
@@ -88,6 +102,7 @@ app.post('/delete', (req, res) => {
   });
 });
 
+// ✅ 서버 시작
 app.listen(PORT, () => {
-  console.log(`✅ 서버 실행 중 http://localhost:${PORT}`);
+  console.log(`✅ 서버 실행 중: http://localhost:${PORT}`);
 });
