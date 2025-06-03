@@ -32,6 +32,13 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
+function fetchImagesAndRender(isPageChange = false) {
+  const pageFolder = getPageFolder(currentPage);
+  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
+    .then(res => res.json())
+    .then(images => renderImages(images, isPageChange));
+}
+
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -104,13 +111,14 @@ function renderImages(images, isPageChange = false) {
   });
 }
 
-
+// 페이지 이동 함수
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
   fetchImagesAndRender(true);
 }
 
+// 파일 업로드 처리
 function uploadFiles(files) {
   const beforeRects = getRects();
   const pageFolder = getPageFolder(currentPage);
@@ -130,11 +138,13 @@ function uploadFiles(files) {
   });
 }
 
+// 방향키 이벤트 처리 (페이지 이동)
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
+// 이미지 드래그 앤 드랍 이벤트 처리
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop', e => {
   e.preventDefault();
@@ -143,4 +153,6 @@ window.addEventListener('drop', e => {
   }
 });
 
+// 페이지 로드 시 첫 번째 페이지 로드
 document.addEventListener('DOMContentLoaded', () => updatePage(currentPage));
+
