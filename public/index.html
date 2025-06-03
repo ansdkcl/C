@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>이미지 뷰어</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div id="page-label">페이지: <span id="page-num">1</span></div>
-  <input type="file" id="fileInput" style="display: none" multiple />
-  <div id="gallery"></div>
-  <script src="script.js"></script>
+  <h1>Page <span id="page-num">1</span></h1>
+  <div id="gallery" class="gallery"></div>
+  <input type="file" id="fileInput" hidden multiple />
+  <script src="/script.js"></script>
 </body>
 </html>
