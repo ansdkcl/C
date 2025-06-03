@@ -59,7 +59,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         { width: 500, height: 500, crop: 'fill', quality: 'auto' } // 최적화: 크기와 품질 자동 설정
       ]
     });
-    
+
     // Cloudinary에서 반환된 secure_url을 클라이언트에 전달
     res.json({ filename, cloudinary_url: result.secure_url });
   } catch (error) {
@@ -100,4 +100,8 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.listen(PORT, () => {
   console.log(`서버 실행 중: http://localhost:${PORT}`);
+});
+
+app.get('*', (req, res) => {
+  res.status(404).json({ error: '잘못된 요청입니다.' });
 });
