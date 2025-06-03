@@ -52,7 +52,6 @@ function renderImages(images, isPageChange = false) {
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
-      
       // image.url이 없으면 default로 fallback 처리
       const imageUrl = image.url || '/uploads/default.jpg';  // 기본 이미지 URL 설정
       img.src = imageUrl + `?v=${Date.now()}`;
@@ -118,7 +117,6 @@ function renderImages(images, isPageChange = false) {
   });
 }
 
-
 // 페이지 이동 함수
 function updatePage(n) {
   currentPage = n;
@@ -163,4 +161,3 @@ window.addEventListener('drop', e => {
 
 // 페이지 로드 시 첫 번째 페이지 로드
 document.addEventListener('DOMContentLoaded', () => updatePage(currentPage));
-

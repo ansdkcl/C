@@ -51,20 +51,22 @@ const upload = multer({ storage });
 app.post('/upload', upload.single('image'), async (req, res) => {
   const filename = req.file.filename;
   const filePath = path.join(req.file.destination, req.file.filename); // 서버에 저장된 파일 경로
+
   try {
+    // Cloudinary로 이미지 업로드 (최적화 옵션 추가)
     const result = await cloudinary.uploader.upload(filePath, {
       transformation: [
         { width: 500, height: 500, crop: 'fill', quality: 'auto' } // 최적화: 크기와 품질 자동 설정
       ]
     });
 
+    // Cloudinary에서 반환된 secure_url을 클라이언트에 전달
     res.json({ filename, cloudinary_url: result.secure_url });
   } catch (error) {
-    console.error("Cloudinary 업로드 실패:", error); // 로그 출력
+    console.error("Cloudinary 업로드 실패:", error);
     res.status(500).json({ error: 'Cloudinary 업로드 실패', detail: error.message });
   }
 });
-
 
 // 이미지 목록 조회
 app.get('/images/:page', (req, res) => {
@@ -100,6 +102,7 @@ app.listen(PORT, () => {
   console.log(`서버 실행 중: http://localhost:${PORT}`);
 });
 
+// 잘못된 요청에 대한 처리
 app.get('*', (req, res) => {
   res.status(404).json({ error: '잘못된 요청입니다.' });
 });
