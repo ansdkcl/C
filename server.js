@@ -82,26 +82,19 @@ app.get('/images/:page', (req, res) => {
   });
 });
 
-// 이미지 삭제 (Cloudinary에서 삭제)
+// 이미지 삭제
 app.post('/delete', (req, res) => {
   const { filename } = req.body; // 삭제할 파일 이름
   const filePath = path.join(UPLOAD_DIR, filename);
-  
-  // Cloudinary에서 이미지 삭제
-  cloudinary.uploader.destroy(filename, (error, result) => {
-    if (error) {
-      return res.status(500).json({ error: 'Cloudinary 이미지 삭제 실패', detail: error.message });
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      return res.status(500).json({ error: '파일 삭제 실패', detail: err.message });
     }
-    console.log('Cloudinary에서 이미지 삭제 성공:', result);
-    // 서버에서 이미지 파일도 삭제
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        return res.status(500).json({ error: '서버 파일 삭제 실패', detail: err.message });
-      }
-      res.status(200).json({ message: '파일 삭제 성공' });
-    });
+    // 삭제 후, 이미지 목록을 다시 갱신하여 클라이언트에 반환
+    res.status(200).json({ message: '파일 삭제 성공' });
   });
 });
+
 
 
 
