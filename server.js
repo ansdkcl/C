@@ -9,10 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
-// CORS 설정
+// CORS 설정: 모든 도메인에서의 요청을 허용하도록 설정
 app.use(cors({
-  origin: '*', // 모든 출처에서 접근 허용
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: '*',  // 모든 출처에서의 요청을 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],  // 허용되는 메서드들
+  allowedHeaders: ['Content-Type', 'Authorization']  // 허용되는 헤더들
 }));
 
 // Cloudinary 설정
@@ -22,12 +23,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// 기본 경로 처리
+// 기본 경로 처리 (기본 경로에 대해 응답)
 app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
 
-// 이미지 업로드 설정
+// 이미지 업로드 설정 (폴더와 파일 이름 관리)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const page = String(req.query.page);
@@ -42,7 +43,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 이미지 업로드 (Cloudinary 업로드 후 서버 파일 삭제)
+// 이미지 업로드 처리
 app.post('/upload', upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
