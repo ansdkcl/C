@@ -98,11 +98,12 @@ app.post('/delete', (req, res) => {
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-app.listen(PORT, () => {
-  console.log(`서버 실행 중: http://localhost:${PORT}`);
-});
-
-// 잘못된 요청에 대한 처리
+// 404 Not Found 처리
 app.get('*', (req, res) => {
   res.status(404).json({ error: '잘못된 요청입니다.' });
+});
+
+// 서버 시작
+app.listen(PORT, () => {
+  console.log(`서버 실행 중: http://localhost:${PORT}`);
 });

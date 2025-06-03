@@ -52,6 +52,7 @@ function renderImages(images, isPageChange = false) {
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
+      
       // image.url이 없으면 default로 fallback 처리
       const imageUrl = image.url || '/uploads/default.jpg';  // 기본 이미지 URL 설정
       img.src = imageUrl + `?v=${Date.now()}`;
