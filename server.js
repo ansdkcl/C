@@ -19,14 +19,26 @@ cloudinary.config({
 // Middleware 설정
 app.use(cors());
 app.use(express.json());
+
+// 요청 경로 및 본문 검증
 app.use((req, res, next) => {
-  console.log('Request received:', req.method, req.url, req.body || 'No body');  // 요청 로그 확인
+  if (!req.url || req.url === '/') {
+    console.error('Invalid URL or missing endpoint');
+    return res.status(400).json({ error: 'Invalid request URL' });
+  }
+
+  if (req.body && Object.keys(req.body).length === 0) {
+    console.error('Request body is empty');
+    return res.status(400).json({ error: 'Empty request body' });
+  }
+
   next();
 });
 
 // 기본 경로 처리
 app.get('/', (req, res) => {
-  res.send('Hello, world!');  // 기본 페이지 응답
+  console.log('Received GET request at /');
+  res.send('Hello, world!');
 });
 
 // `/favicon.ico` 요청 무시
