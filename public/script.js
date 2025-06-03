@@ -32,13 +32,6 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
-function fetchImagesAndRender(isPageChange = false) {
-  const pageFolder = getPageFolder(currentPage);
-  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
-    .then(res => res.json())
-    .then(images => renderImages(images, isPageChange));
-}
-
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -59,13 +52,15 @@ function renderImages(images, isPageChange = false) {
       img.src = image.url + `?v=${Date.now()}`;
     }
 
-    // 클릭, 우클릭 이벤트 항상 새로 할당!
+    // 클릭 이벤트 (이미지 확대/축소)
     img.onclick = () => {
       document.querySelectorAll('.gallery-image.zoomed').forEach(el => {
         if (el !== img) el.classList.remove('zoomed');
       });
       img.classList.toggle('zoomed');
     };
+
+    // 우클릭 이벤트 (이미지 삭제)
     img.oncontextmenu = (e) => {
       e.preventDefault();
       if (img.classList.contains('pop-out')) return;
@@ -86,6 +81,7 @@ function renderImages(images, isPageChange = false) {
       });
     };
 
+    // 페이지 변경 시 애니메이션 적용
     if (isPageChange) {
       img.style.animation = `fadeInUp 0.4s ease-out both`;
       img.style.animationDelay = `${i * 60}ms`;
@@ -101,11 +97,13 @@ function renderImages(images, isPageChange = false) {
     }
   });
 
+  // 새로 추가된 이미지에 FLIP 효과 적용
   requestAnimationFrame(() => {
     const afterRects = getRects();
     applyFLIP(beforeRects, afterRects);
   });
 }
+
 
 function updatePage(n) {
   currentPage = n;
