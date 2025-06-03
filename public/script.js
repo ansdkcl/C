@@ -76,18 +76,18 @@ function renderImages(images, isPageChange = false) {
 
       img.addEventListener('animationend', () => {
         if (gallery.contains(img)) gallery.removeChild(img);
-        // 이미지 삭제 후 1초 뒤에 갤러리 갱신
-        setTimeout(() => fetchImagesAndRender(false), 1000);
+
+        // 이미지 삭제 후 갤러리 갱신
+        fetchImagesAndRender(false); // 삭제된 이미지에 대한 갱신
       }, { once: true });
 
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-      }).then(response => response.json())
-        .then(() => {
-          setTimeout(() => fetchImagesAndRender(false), 1000);
-        });
+      }).then(() => {
+        setTimeout(() => fetchImagesAndRender(false), 1000);
+      });
     };
 
     // 페이지 변경 시 애니메이션 적용
