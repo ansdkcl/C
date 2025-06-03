@@ -39,7 +39,6 @@ function fetchImagesAndRender(isPageChange = false) {
     .then(images => renderImages(images, isPageChange));
 }
 
-// renderImages 함수 수정
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -77,17 +76,18 @@ function renderImages(images, isPageChange = false) {
 
       img.addEventListener('animationend', () => {
         if (gallery.contains(img)) gallery.removeChild(img);
+        // 이미지 삭제 후 1초 뒤에 갤러리 갱신
+        setTimeout(() => fetchImagesAndRender(false), 1000);
       }, { once: true });
 
-      // 서버에 이미지 삭제 요청
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-      }).then(() => {
-        // 삭제 후 1초 뒤에 이미지 다시 렌더링
-        setTimeout(fetchImagesAndRender, 1000);
-      });
+      }).then(response => response.json())
+        .then(() => {
+          setTimeout(() => fetchImagesAndRender(false), 1000);
+        });
     };
 
     // 페이지 변경 시 애니메이션 적용
@@ -112,7 +112,6 @@ function renderImages(images, isPageChange = false) {
     applyFLIP(beforeRects, afterRects);
   });
 }
-
 
 // 페이지 이동 함수
 function updatePage(n) {
