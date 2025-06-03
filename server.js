@@ -20,10 +20,17 @@ cloudinary.config({
 app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('Request received:', req.method, req.url, req.body);
+  console.log('Request received:', req.method, req.url, req.body || 'No body');  // 요청 로그 확인
   next();
 });
 
+// 기본 경로 처리
+app.get('/', (req, res) => {
+  res.send('Hello, world!');  // 기본 페이지 응답
+});
+
+// `/favicon.ico` 요청 무시
+app.get('/favicon.ico', (req, res) => res.status(204));  // 빈 응답을 보냄
 
 // 정적 파일 서비스
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
