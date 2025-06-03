@@ -155,4 +155,3 @@ window.addEventListener('drop', e => {
 
 // 페이지 로드 시 첫 번째 페이지 로드
 document.addEventListener('DOMContentLoaded', () => updatePage(currentPage));
-
