@@ -20,14 +20,12 @@ cloudinary.config({
 app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('요청:', req.method, req.url, req.body);
+  console.log('요청:', req.method, req.url, req.body || '빈 요청');
   next();
 });
 
-// 루트 경로 테스트 응답
-app.get('/', (req, res) => {
-  res.send('✅ 서버 정상 작동 중!');
-});
+// 정적 파일 서비스
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // uploads 폴더 자동 생성
 function ensureDir(dir) {
@@ -54,22 +52,27 @@ const upload = multer({ storage });
 
 // 이미지 업로드 (Cloudinary 업로드 후 서버 파일 삭제)
 app.post('/upload', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
+  }
+
   const filename = req.file.filename;
   const filePath = path.join(req.file.destination, filename);
 
   try {
-    // Cloudinary 업로드
     const result = await cloudinary.uploader.upload(filePath, {
       transformation: [{ width: 500, height: 500, crop: 'fill', quality: 'auto' }]
     });
 
-    // 서버 파일 삭제
     fs.unlink(filePath, (err) => {
-      if (err) console.error(`파일 삭제 실패: ${filePath}`, err);
-      else console.log(`파일 삭제 성공: ${filePath}`);
+      if (err) {
+        console.error(`파일 삭제 실패: ${filePath}`, err);
+        res.status(500).json({ error: '서버 파일 삭제 실패' });
+      } else {
+        console.log(`파일 삭제 성공: ${filePath}`);
+      }
     });
 
-    // 클라이언트에 Cloudinary URL 반환
     res.json({ filename, cloudinary_url: result.secure_url });
   } catch (error) {
     console.error("Cloudinary 업로드 실패:", error);
@@ -83,8 +86,13 @@ app.get('/images/:page', (req, res) => {
   ensureDir(pageDir);
 
   fs.readdir(pageDir, (err, files) => {
-    if (err) return res.json([]);
-    res.json(files.map(f => ({
+    if (err) {
+      console.error(`디렉토리 읽기 실패: ${pageDir}`, err);
+      return res.status(500).json({ error: '디렉토리 읽기 실패', detail: err.message });
+    }
+
+    const imageFiles = files.filter(file => file.match(/\.(jpg|jpeg|png|gif)$/));
+    res.json(imageFiles.map(f => ({
       url: `/uploads/${req.params.page}/${f}`,
       filename: f
     })));

@@ -3,10 +3,12 @@ const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
 const fileInput = document.getElementById('fileInput');
 
+// 페이지 폴더 이름 가져오기
 function getPageFolder(n) {
   return `page-${n}`;
 }
 
+// 이미지들의 위치와 크기 정보 가져오기
 function getRects() {
   return Array.from(gallery.children).map(el => ({
     el,
@@ -15,6 +17,7 @@ function getRects() {
   }));
 }
 
+// FLIP 애니메이션 적용
 function applyFLIP(beforeRects, afterRects) {
   afterRects.forEach(({ el, key }) => {
     const before = beforeRects.find(b => b.key === key);
@@ -32,133 +35,91 @@ function applyFLIP(beforeRects, afterRects) {
   });
 }
 
+// 이미지 목록을 서버에서 가져와서 렌더링
 function fetchImagesAndRender(isPageChange = false) {
   const pageFolder = getPageFolder(currentPage);
   fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
     .then(res => res.json())
-    .then(images => renderImages(images, isPageChange));
+    .then(images => {
+      console.log('Fetched images:', images); // 이미지를 정상적으로 가져왔는지 확인
+      renderImages(images, isPageChange);
+    });
 }
 
+// 이미지를 렌더링하는 함수
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
-  const existing = [...gallery.children];
-  const existingMap = new Map(existing.map(el => [el.dataset.filename, el]));
   const filenames = new Set();
 
   images.forEach((image, i) => {
     filenames.add(image.filename);
-    let img = existingMap.get(image.filename);
+    let img = document.querySelector(`img[data-filename="${image.filename}"]`);
 
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
-      
-      // image.url이 없으면 default로 fallback 처리
-      const imageUrl = image.url || '/uploads/default.jpg';  // 기본 이미지 URL 설정
-      img.src = imageUrl + `?v=${Date.now()}`;
+      img.src = image.url + `?v=${Date.now()}`;
       img.dataset.filename = image.filename;
       gallery.appendChild(img);
     } else {
-      // 기존 이미지의 URL 갱신 (캐시 방지)
-      const imageUrl = image.url || '/uploads/default.jpg';  // 기본 이미지 URL 설정
-      img.src = imageUrl + `?v=${Date.now()}`;
+      img.src = image.url + `?v=${Date.now()}`;
     }
 
-    // 클릭 이벤트 (이미지 확대/축소)
-    img.onclick = () => {
-      document.querySelectorAll('.gallery-image.zoomed').forEach(el => {
-        if (el !== img) el.classList.remove('zoomed');
-      });
-      img.classList.toggle('zoomed');
-    };
+    img.onclick = () => img.classList.toggle('zoomed');
 
-    // 우클릭 이벤트 (이미지 삭제)
     img.oncontextmenu = (e) => {
       e.preventDefault();
-      if (img.classList.contains('pop-out')) return;
-
       img.classList.add('pop-out');
+      setTimeout(() => gallery.removeChild(img), 500);
 
-      img.addEventListener('animationend', () => {
-        if (gallery.contains(img)) gallery.removeChild(img);
-        // 이미지 삭제 후 1초 뒤에 갤러리 갱신
-        setTimeout(() => fetchImagesAndRender(false), 1000);
-      }, { once: true });
-
+      // 이미지 삭제 요청
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
-      }).then(response => response.json())
-        .then(() => {
-          setTimeout(() => fetchImagesAndRender(false), 1000);
-        });
+      }).then(response => {
+        if (response.ok) {
+          console.log('Image deleted successfully');
+          setTimeout(() => fetchImagesAndRender(false), 1000); // 이미지 삭제 후 갱신
+        } else {
+          console.error('Failed to delete image');
+        }
+      });
     };
-
-    // 페이지 변경 시 애니메이션 적용
-    if (isPageChange) {
-      img.style.animation = `fadeInUp 0.4s ease-out both`;
-      img.style.animationDelay = `${i * 60}ms`;
-    } else {
-      img.style.animation = '';
-      img.style.animationDelay = '';
-    }
   });
 
-  existing.forEach(el => {
-    if (!filenames.has(el.dataset.filename)) {
-      if (gallery.contains(el)) gallery.removeChild(el);
-    }
-  });
-
-  // 새로 추가된 이미지에 FLIP 효과 적용
-  requestAnimationFrame(() => {
-    const afterRects = getRects();
-    applyFLIP(beforeRects, afterRects);
-  });
+  requestAnimationFrame(() => applyFLIP(beforeRects, getRects()));
 }
 
-// 페이지 이동 함수
+// 페이지 업데이트
 function updatePage(n) {
   currentPage = n;
   pageNum.textContent = currentPage;
   fetchImagesAndRender(true);
 }
 
-// 파일 업로드 처리
+// 파일 업로드 함수
 function uploadFiles(files) {
-  const beforeRects = getRects();
   const pageFolder = getPageFolder(currentPage);
+  const formData = new FormData();
+  [...files].forEach(file => formData.append('image', file));
 
-  [...files].forEach(file => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    fetch(`/upload?page=${pageFolder}`, {
-      method: 'POST',
-      body: formData
-    })
-      .then(res => res.json())
-      .then(({ filename }) => {
-        fetchImagesAndRender(false);
-      });
-  });
+  fetch(`/upload?page=${pageFolder}`, { method: 'POST', body: formData })
+    .then(() => fetchImagesAndRender(false)); // 업로드 후 이미지 렌더링
 }
 
-// 방향키 이벤트 처리 (페이지 이동)
+// 키보드 이벤트 처리 (페이지 이동)
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') updatePage(currentPage + 1);
   if (e.key === 'ArrowLeft' && currentPage > 1) updatePage(currentPage - 1);
 });
 
-// 이미지 드래그 앤 드랍 이벤트 처리
+// 드래그 앤 드롭 처리
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop', e => {
   e.preventDefault();
-  if (e.dataTransfer.files.length > 0) {
-    uploadFiles(e.dataTransfer.files);
-  }
+  if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
 });
 
-// 페이지 로드 시 첫 번째 페이지 로드
+// DOMContentLoaded 시 첫 페이지로 업데이트
 document.addEventListener('DOMContentLoaded', () => updatePage(currentPage));
