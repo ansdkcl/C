@@ -52,10 +52,12 @@ function renderImages(images, isPageChange = false) {
     if (!img) {
       img = document.createElement('img');
       img.className = 'gallery-image';
+      // 이미지 URL에 캐시를 방지하기 위한 쿼리 파라미터 추가
       img.src = image.url + `?v=${Date.now()}`;
       img.dataset.filename = image.filename;
       gallery.appendChild(img);
     } else {
+      // 기존 이미지의 URL 갱신 (캐시 방지)
       img.src = image.url + `?v=${Date.now()}`;
     }
 
@@ -76,6 +78,7 @@ function renderImages(images, isPageChange = false) {
 
       img.addEventListener('animationend', () => {
         if (gallery.contains(img)) gallery.removeChild(img);
+        // 이미지 삭제 후 1초 뒤에 갤러리 갱신
         setTimeout(() => fetchImagesAndRender(false), 1000);
       }, { once: true });
 

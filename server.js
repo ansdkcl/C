@@ -82,23 +82,18 @@ app.get('/images/:page', (req, res) => {
   });
 });
 
-// 이미지 삭제 (Cloudinary에서 삭제)
+// 이미지 삭제
 app.post('/delete', (req, res) => {
-  const { public_id } = req.body; // 클라이언트가 전달한 public_id
-  if (!public_id) {
-    return res.status(400).json({ error: '잘못된 요청: public_id가 없습니다.' });
-  }
-
-  // Cloudinary에서 이미지 삭제
-  cloudinary.uploader.destroy(public_id, (error, result) => {
-    if (error) {
-      console.log('Cloudinary 삭제 실패:', error);
-      return res.status(500).json({ error: 'Cloudinary 삭제 실패', detail: error.message });
+  const { filename } = req.body; // 삭제할 파일 이름
+  const filePath = path.join(UPLOAD_DIR, filename);
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      return res.status(500).json({ error: '파일 삭제 실패', detail: err.message });
     }
-    console.log('Cloudinary 삭제 성공:', result);
-    res.sendStatus(200); // 삭제 성공시 HTTP 200 반환
+    res.status(200).json({ message: '파일 삭제 성공' });
   });
 });
+
 
 // **정적 파일 서빙은 마지막에!**
 app.use(express.static('public'));
