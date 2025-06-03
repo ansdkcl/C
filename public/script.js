@@ -77,10 +77,11 @@ function renderImages(images, isPageChange = false) {
       img.classList.add('pop-out');
 
       img.addEventListener('animationend', () => {
-        if (gallery.contains(img)) gallery.removeChild(img);
-        // 이미지 삭제 후 1초 뒤에 갤러리 갱신
-        setTimeout(() => fetchImagesAndRender(false), 1000);
-      }, { once: true });
+  if (gallery.contains(img)) gallery.removeChild(img);
+  // 이미지 삭제 후 1초 뒤에 갤러리 갱신
+  setTimeout(() => fetchImagesAndRender(false), 1000);
+}, { once: true });
+
 
       fetch('/delete', {
         method: 'POST',
