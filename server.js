@@ -84,30 +84,19 @@ app.get('/images/:page', (req, res) => {
 
 // 이미지 삭제 (Cloudinary에서 삭제)
 app.post('/delete', (req, res) => {
-  const { filename } = req.body; // 클라이언트가 전달한 filename
-  if (!filename) {
-    return res.status(400).json({ error: '잘못된 요청: filename이 없습니다.' });
+  const { public_id } = req.body; // 클라이언트가 전달한 public_id
+  if (!public_id) {
+    return res.status(400).json({ error: '잘못된 요청: public_id가 없습니다.' });
   }
 
-  const filePath = path.join(UPLOAD_DIR, getPageFolder(req.body.page), filename);
-
   // Cloudinary에서 이미지 삭제
-  cloudinary.uploader.destroy(filename, (error, result) => {
+  cloudinary.uploader.destroy(public_id, (error, result) => {
     if (error) {
       console.log('Cloudinary 삭제 실패:', error);
       return res.status(500).json({ error: 'Cloudinary 삭제 실패', detail: error.message });
     }
-
-    // 파일 시스템에서 이미지 삭제
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.log('파일 삭제 실패:', err);
-        return res.status(500).json({ error: '파일 삭제 실패', detail: err.message });
-      }
-
-      console.log('Cloudinary 삭제 성공:', result);
-      res.sendStatus(200); // 삭제 성공시 HTTP 200 반환
-    });
+    console.log('Cloudinary 삭제 성공:', result);
+    res.sendStatus(200); // 삭제 성공시 HTTP 200 반환
   });
 });
 
