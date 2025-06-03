@@ -20,9 +20,10 @@ cloudinary.config({
 app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('요청:', req.method, req.url, req.body || '빈 요청');
+  console.log('Request received:', req.method, req.url, req.body);
   next();
 });
+
 
 // 정적 파일 서비스
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
