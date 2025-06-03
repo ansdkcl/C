@@ -20,40 +20,11 @@ cloudinary.config({
 app.use(cors());
 app.use(express.json());
 
-// 요청 경로 및 본문 검증
-app.use((req, res, next) => {
-  if (!req.url || req.url === '/') {
-    console.error('Invalid URL or missing endpoint');
-    return res.status(400).json({ error: 'Invalid request URL' });
-  }
-
-  if (req.body && Object.keys(req.body).length === 0) {
-    console.error('Request body is empty');
-    return res.status(400).json({ error: 'Empty request body' });
-  }
-
-  next();
-});
-
 // 기본 경로 처리
 app.get('/', (req, res) => {
   console.log('Received GET request at /');
   res.send('Hello, world!');
 });
-
-// `/favicon.ico` 요청 무시
-app.get('/favicon.ico', (req, res) => res.status(204));  // 빈 응답을 보냄
-
-// 정적 파일 서비스
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// uploads 폴더 자동 생성
-function ensureDir(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    console.log(`폴더 생성: ${dir}`);
-  }
-}
 
 // 이미지 업로드 설정
 const storage = multer.diskStorage({
