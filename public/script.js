@@ -39,6 +39,7 @@ function fetchImagesAndRender(isPageChange = false) {
     .then(images => renderImages(images, isPageChange));
 }
 
+// renderImages 함수 수정
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
   const existing = [...gallery.children];
@@ -76,14 +77,15 @@ function renderImages(images, isPageChange = false) {
 
       img.addEventListener('animationend', () => {
         if (gallery.contains(img)) gallery.removeChild(img);
-        fetchImagesAndRender(false);
       }, { once: true });
 
+      // 서버에 이미지 삭제 요청
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
       }).then(() => {
+        // 삭제 후 1초 뒤에 이미지 다시 렌더링
         setTimeout(fetchImagesAndRender, 1000);
       });
     };
@@ -110,6 +112,7 @@ function renderImages(images, isPageChange = false) {
     applyFLIP(beforeRects, afterRects);
   });
 }
+
 
 // 페이지 이동 함수
 function updatePage(n) {
