@@ -83,27 +83,49 @@ app.get('/images/:page', (req, res) => {
 });
 
 // 이미지 삭제
+// 파일 삭제 시 올바른 경로 전달 여부 확인
 app.post('/delete', (req, res) => {
-  const { filename } = req.body; // 삭제할 파일 이름
+  const { filename } = req.body;
+  
+  // 파일명이 제대로 전달되는지 확인
+  if (!filename) {
+    return res.status(400).json({ error: '파일명이 필요합니다.' });
+  }
+  
   const filePath = path.join(UPLOAD_DIR, filename);
+  
   fs.unlink(filePath, (err) => {
     if (err) {
+      console.error("파일 삭제 실패:", err);
       return res.status(500).json({ error: '파일 삭제 실패', detail: err.message });
     }
+    console.log("파일 삭제 성공:", filename);
     res.status(200).json({ message: '파일 삭제 성공' });
   });
 });
 
-// **정적 파일 서빙은 마지막에!**
-app.use(express.static('public'));
-app.use('/uploads', express.static(UPLOAD_DIR));
+// 이미지 업로드 시 경로 제대로 전달 확인
+app.post('/upload', upload.single('image'), async (req, res) => {
+  const filename = req.file.filename;
+  
+  // 파일이 제대로 업로드 되었는지 확인
+  if (!filename) {
+    return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
+  }
 
-// 404 Not Found 처리
-app.get('*', (req, res) => {
-  res.status(404).json({ error: '잘못된 요청입니다.' });
-});
+  const filePath = path.join(req.file.destination, req.file.filename);
+  try {
+    // Cloudinary로 이미지 업로드 (최적화 옵션 추가)
+    const result = await cloudinary.uploader.upload(filePath, {
+      transformation: [
+        { width: 500, height: 500, crop: 'fill', quality: 'auto' }
+      ]
+    });
 
-// 서버 시작
-app.listen(PORT, () => {
-  console.log(`서버 실행 중: http://localhost:${PORT}`);
+    // Cloudinary에서 반환된 secure_url을 클라이언트에 전달
+    res.json({ filename, cloudinary_url: result.secure_url });
+  } catch (error) {
+    console.error("Cloudinary 업로드 실패:", error);
+    res.status(500).json({ error: 'Cloudinary 업로드 실패', detail: error.message });
+  }
 });
