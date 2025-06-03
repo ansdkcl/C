@@ -1,3 +1,5 @@
+// ✅ 클라이언트 코드: cloudinary_url 우선 적용
+
 let currentPage = 1;
 const pageNum = document.getElementById('page-num');
 const gallery = document.getElementById('gallery');
@@ -25,7 +27,7 @@ function applyFLIP(beforeRects, afterRects) {
       el.style.transition = 'none';
       el.style.transform = `translate(${dx}px, ${dy}px)`;
       requestAnimationFrame(() => {
-        el.style.transition = 'transform 0.5s cubic-bezier(0.4,0.2,0.2,1)';
+        el.style.transition = 'transform 0.5s ease';
         el.style.transform = 'translate(0, 0)';
       });
     }
@@ -34,57 +36,36 @@ function applyFLIP(beforeRects, afterRects) {
 
 function fetchImagesAndRender(isPageChange = false) {
   const pageFolder = getPageFolder(currentPage);
-  fetch(`/images/${pageFolder}?v=${Date.now()}`, { cache: 'no-store' })
+  fetch(`/images/${pageFolder}?v=${Date.now()}`)
     .then(res => res.json())
-    .then(images => {
-      renderImages(images, isPageChange);
-    });
+    .then(images => renderImages(images, isPageChange));
 }
 
 function renderImages(images, isPageChange = false) {
   const beforeRects = getRects();
-  const filenames = new Set();
+  gallery.innerHTML = ''; // 초기화
 
-  images.forEach((image, i) => {
-    filenames.add(image.filename);
-    let img = document.querySelector(`img[data-filename="${image.filename}"]`);
-
-    // Cloudinary URL 우선 적용
-    const imgUrl = image.cloudinary_url || image.url;
-
-    if (!img) {
-      img = document.createElement('img');
-      img.className = 'gallery-image';
-      img.src = imgUrl + `?v=${Date.now()}`;
-      img.dataset.filename = image.filename;
-      gallery.appendChild(img);
-    } else {
-      img.src = imgUrl + `?v=${Date.now()}`;
-    }
+  images.forEach(image => {
+    const img = document.createElement('img');
+    img.className = 'gallery-image';
+    img.src = image.cloudinary_url + `?v=${Date.now()}`;
+    img.dataset.filename = image.filename;
 
     img.onclick = () => img.classList.toggle('zoomed');
 
-    img.oncontextmenu = (e) => {
+    img.oncontextmenu = e => {
       e.preventDefault();
       img.classList.add('pop-out');
-      setTimeout(() => gallery.removeChild(img), 500);
+      setTimeout(() => gallery.removeChild(img), 300);
 
       fetch('/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          page: getPageFolder(currentPage),
-          filename: image.filename
-        })
-      }).then(response => {
-        if (response.ok) {
-          console.log('Image deleted successfully');
-          setTimeout(() => fetchImagesAndRender(false), 1000);
-        } else {
-          console.error('Failed to delete image');
-        }
-      });
+        body: JSON.stringify({ page: getPageFolder(currentPage), filename: image.filename })
+      }).then(() => setTimeout(() => fetchImagesAndRender(), 500));
     };
+
+    gallery.appendChild(img);
   });
 
   requestAnimationFrame(() => applyFLIP(beforeRects, getRects()));
@@ -104,7 +85,7 @@ function uploadFiles(files) {
   fetch(`/upload?page=${pageFolder}`, {
     method: 'POST',
     body: formData
-  }).then(() => fetchImagesAndRender(false));
+  }).then(() => fetchImagesAndRender());
 }
 
 window.addEventListener('keydown', (e) => {
